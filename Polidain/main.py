@@ -5,10 +5,10 @@ import numpy as np
 # Исходные данные
 # -----------------------------
 
-N_k = 1000                                # Количество оборотов кулачка в минут
-T = 60 / N_k
+N_k = 1000                              # Количество оборотов кулачка в минут
+T = 60 / N_k                            # Период оборота кулачка
 d = 30.0 * 1e-3                         # Базовый диаметр кулака (мм)
-r0 = d / 2
+r0 = d / 2                              # Базовый радиус кулачка
 h = 12.0 * 1e-3                         # Максимальное перемещение толкателя (мм)
 z = 0.25 * 1e-3                         # Тепловой зазор (мм)
 f_pod = 80.0                     # Фаза подъёма (град)
@@ -225,16 +225,16 @@ fig, axs = plt.subplots(5, 1, figsize=(8, 20))  # 5 строк, 1 столбец
 
 # --- 1. Координата ---
 t = np.concatenate((t_1, t_2, t_3, t_4))
-Y = np.concatenate((Y_1, Y_2, Y_3, Y_4))
-V = np.concatenate((V_1_sek, V_2_sek, V_3_sek, V_4_sek))
-A = np.concatenate((A_1_sek, A_2_sek, A_3_sek, A_4_sek))
-D = np.concatenate((D_1_sek, D_2_sek, D_3_sek, D_4_sek))
-K = np.concatenate((K_1_sek, K_2_sek, K_3_sek, K_4_sek))
+Y = np.concatenate((Y_1, Y_2, Y_3, Y_4)) * 1000
+V = np.concatenate((V_1_sek, V_2_sek, V_3_sek, V_4_sek)) * 1000
+A = np.concatenate((A_1_sek, A_2_sek, A_3_sek, A_4_sek)) * 1000
+D = np.concatenate((D_1_sek, D_2_sek, D_3_sek, D_4_sek)) * 1000
+K = np.concatenate((K_1_sek, K_2_sek, K_3_sek, K_4_sek)) * 1000
 
 axs[0].plot(t, Y)
 axs[0].scatter(t[Y.argmax()], Y.max(), color='r')
 axs[0].set_xlabel('t, c')
-axs[0].set_ylabel('координата толкателя, м')
+axs[0].set_ylabel('координата толкателя, мм')
 
 axs[0].grid(True)
 
@@ -243,7 +243,7 @@ axs[1].plot(t, V)
 axs[1].scatter(t[V.argmax()], V.max(), color='r')
 axs[1].scatter(t[V.argmin()], V.min(), color='b')
 axs[1].set_xlabel('t, c')
-axs[1].set_ylabel('Скорость')
+axs[1].set_ylabel('Скорость, $мм/с$')
 axs[1].grid(True)
 
 # --- 3. Ускорение ---
@@ -251,7 +251,7 @@ axs[2].plot(t, A)
 axs[2].scatter(t[A.argmax()], A.max(), color='r')
 axs[2].scatter(t[A.argmin()], A.min(), color='b')
 axs[2].set_xlabel('t, c')
-axs[2].set_ylabel('Ускорение')
+axs[2].set_ylabel('Ускорение, $мм/с^2$')
 axs[2].grid(True)
 
 # --- 4. Рывок ---
@@ -259,7 +259,7 @@ axs[3].plot(t, D)
 axs[3].scatter(t[D.argmax()], D.max(), color='r')
 axs[3].scatter(t[D.argmin()], D.min(), color='b')
 axs[3].set_xlabel('t, c')
-axs[3].set_ylabel('Рывок')
+axs[3].set_ylabel('Рывок, $мм/с^3$')
 axs[3].grid(True)
 
 # --- 5. "Кракен" ---
@@ -267,7 +267,7 @@ axs[4].plot(t, K)
 axs[4].scatter(t[K.argmax()], K.max(), color='r')
 axs[4].scatter(t[K.argmin()], K.min(), color='b')
 axs[4].set_xlabel('t, c')
-axs[4].set_ylabel('Кракен')
+axs[4].set_ylabel('Кракен, $мм/с^4$')
 axs[4].grid(True)
 
 plt.tight_layout()
@@ -305,29 +305,32 @@ plt.show()
 def out_red(text):
     print("\033[34m{}".format(text))
 
-V_max = V.max()
-V_min = V.min()
+V_max = V.max() / 1e3
+V_min = V.min() / 1e3
 print('Максимальная скорость толкателя:', V_max, ' м/с')
 print('Минимальная скорость толкателя:', V_min, ' м/с')
 if abs(V_max) > V_lim or abs(V_min) > V_lim:
     out_red('Превышен придел скорости')
 print('\n')
-A_max = A.max()
-A_min = A.min()
+
+A_max = A.max() / 1e3
+A_min = A.min() / 1e3
 print('Максимальное ускорение толкателя:', A_max, ' м/с^2')
 print('Минимальное ускорение толкателя:', A_min, ' м/с^2')
 if abs(A_max) > A_lim or abs(A_min) > A_lim:
     out_red('Превышен придел ускорения')
 print('\n')
-D_max = D.max()
-D_min = D.min()
+
+D_max = D.max() / 1e3
+D_min = D.min() / 1e3
 print('Максимальный рывок толкателя:', D_max, ' м/с^3')
 print('Минимальный рывок толкателя:', D_min, ' м/с^3')
 if abs(D_max) > D_lim or abs(D_min) > D_lim:
     out_red('Превышен придел рывка')
 print('\n')
-K_max = K.max()
-K_min = K.min()
+
+K_max = K.max() / 1e3
+K_min = K.min() / 1e3
 print('Максимальный кракен толкателя:', K_max, ' м/с^4')
 print('Минимальный кракен толкателя:', K_min, ' м/с^4')
 if abs(K_max) > K_lim or abs(K_min) > K_lim:
