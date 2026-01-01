@@ -366,42 +366,60 @@ data = [
 ]
 
 # Преобразование в полярные координаты
+X = []
+Y = []
 R = []
 FI = []
 for x, y in data:
+    X.append(x)
+    Y.append(y)
     r = math.hypot(x, y)
     if x < 0:
         phi = math.pi + (math.pi + math.atan2(x, y))
     else:
         phi = math.atan2(x, y)   # угол в радианах
     R.append(r)
-    FI.append(phi / math.pi * 180)
-
-V = np.gradient(R, FI[1] - FI[0])
+    FI.append(phi)
+FI[-1] = np.pi * 2
+'''V = np.gradient(R, FI[1] - FI[0])
 A = np.gradient(V, FI[1] - FI[0])
-D = np.gradient(A, FI[1] - FI[0])
+D = np.gradient(A, FI[1] - FI[0])'''
+V = np.array([(R[i + 1] - R[i]) / (FI[i + 1] - FI[i]) for i in range(len(R) - 1)] + [0])
+A = np.array([(V[i + 1] - V[i]) / (FI[i + 1] - FI[i]) for i in range(len(R) - 1)] + [0])
+D = np.array([(A[i + 1] - A[i]) / (FI[i + 1] - FI[i]) for i in range(len(R) - 1)] + [0])
 
-import matplotlib.pyplot as plt
-plt.plot(FI, R)
-plt.xlabel('phi, град')
-plt.ylabel('R')
-plt.grid(True)
-plt.show()
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-plt.plot(FI, V)
-plt.xlabel('phi, град')
-plt.ylabel('V')
-plt.grid(True)
-plt.show()
+    plt.figure(figsize=(6, 6))
+    plt.plot(X, Y)
+    plt.grid(True)
+    plt.scatter(0, 0, c='r')
+    plt.xlim(min(X)-1, max(X)+1)
+    plt.ylim(min(Y)-1, max(Y)+1)
+    plt.show()
+    exit()
 
-plt.plot(FI, A)
-plt.xlabel('phi, град')
-plt.ylabel('A')
-plt.grid(True)
-plt.show()
+    plt.plot(FI, R)
+    plt.xlabel('phi, град')
+    plt.ylabel('R')
+    plt.grid(True)
+    plt.show()
 
-plt.plot(FI, D)
-plt.xlabel('phi, град')
-plt.ylabel('D')
-plt.grid(True)
-plt.show()
+    plt.plot(FI, V)
+    plt.xlabel('phi, град')
+    plt.ylabel('V')
+    plt.grid(True)
+    plt.show()
+
+    plt.plot(FI, A)
+    plt.xlabel('phi, град')
+    plt.ylabel('A')
+    plt.grid(True)
+    plt.show()
+
+    plt.plot(FI, D)
+    plt.xlabel('phi, град')
+    plt.ylabel('D')
+    plt.grid(True)
+    plt.show()

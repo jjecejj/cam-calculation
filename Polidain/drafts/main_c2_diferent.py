@@ -18,12 +18,15 @@ f_op = 75.0 / 180 * pi                      # Фаза опускания (гр�
 f_z = 25 / 180 * pi                         # Фаза теплового зазора (град)
 
 # Диапазон значений от 1 до 100, принимают только целочисленные величины
-m = 3 # степень при C2 только целочисленное и не меньше 3!!!
-d = 2 # разночть между степенями членов полинома только целочисленное и не меньше 1!!!
-k_1 = 8                       # коэффициент агрессивности первого участка (выбор зазора)
+m = 4 # степень при C2 только целочисленное и не меньше 3!!!
+d = 2 # разность между степенями членов полинома только целочисленное и не меньше 1!!!
+k_1 = 30                        # коэффициент агрессивности первого участка (выбор зазора)
 k_2 = 8                         # коэффициент агрессивности второго участка (Фаза подъёма)
-k_3 = 8                         # коэффициент агрессивности пятого участка (Фаза опускания)
-k_4 = 8                         # коэффициент агрессивности шестого участка (Фаза выбора зазора)
+k_3 = 8                         # коэффициент агрессивности четвёртого участка (Фаза опускания)
+k_4 = 8                         # коэффициент агрессивности пятого участка (Фаза выбора зазора)
+same_k_falg = True
+if same_k_falg:
+    k_1, k_2, k_3, k_4 = k_1, k_1, k_1, k_1
 
 # Ограничение по параметрам
 V_lim = 5 # Скорость [м/с]
@@ -199,118 +202,122 @@ t_2 = X_2 * (T / pi)
 t_3 = X_3 * (T / pi)
 t_4 = X_4 * (T / pi)
 
-import matplotlib.pyplot as plt
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-fig, axs = plt.subplots(5, 1, figsize=(8, 20))
+    fig, axs = plt.subplots(5, 1, figsize=(8, 20))
 
-t = np.concatenate((t_1, t_2, t_3, t_4))
-Y = np.concatenate((Y_1, Y_2, Y_3, Y_4))
-V = np.concatenate((V_1, V_2, V_3, V_4))
-A = np.concatenate((A_1, A_2, A_3, A_4))
-D = np.concatenate((D_1, D_2, D_3, D_4))
-K = np.concatenate((K_1, K_2, K_3, K_4))
+    t = np.concatenate((t_1, t_2, t_3, t_4))
+    Y = np.concatenate((Y_1, Y_2, Y_3, Y_4))
+    V = np.concatenate((V_1, V_2, V_3, V_4))
+    A = np.concatenate((A_1, A_2, A_3, A_4))
+    D = np.concatenate((D_1, D_2, D_3, D_4))
+    K = np.concatenate((K_1, K_2, K_3, K_4))
 
-# --- 1. Координата ---
-axs[0].plot(t, Y * 1000)
-axs[0].scatter(t[Y.argmax()], Y.max() * 1000, color='r')
-axs[0].set_xlabel('t, c')
-axs[0].set_ylabel('координата толкателя, мм')
-axs[0].grid(True)
+    # --- 1. Координата ---
+    axs[0].plot(t, Y * 1000)
+    axs[0].scatter(t[Y.argmax()], Y.max() * 1000, color='r')
+    axs[0].set_xlabel('t, c')
+    axs[0].set_ylabel('координата толкателя, мм')
+    axs[0].grid(True)
 
-# --- 2. Скорость ---
-axs[1].plot(t, V * 1000)
-axs[1].scatter(t[V.argmax()], V.max() * 1000, color='r')
-axs[1].scatter(t[V.argmin()], V.min() * 1000, color='b')
-axs[1].set_xlabel('t, c')
-axs[1].set_ylabel('Скорость, $мм/с$')
-axs[1].grid(True)
+    # --- 2. Скорость ---
+    axs[1].plot(t, V * 1000)
+    axs[1].scatter(t[V.argmax()], V.max() * 1000, color='r')
+    axs[1].scatter(t[V.argmin()], V.min() * 1000, color='b')
+    axs[1].set_xlabel('t, c')
+    axs[1].set_ylabel('Скорость, $мм/с$')
+    axs[1].grid(True)
 
-# --- 3. Ускорение ---
-axs[2].plot(t, A * 1000)
-axs[2].scatter(t[A.argmax()], A.max() * 1000, color='r')
-axs[2].scatter(t[A.argmin()], A.min() * 1000, color='b')
-axs[2].set_xlabel('t, c')
-axs[2].set_ylabel('Ускорение, $мм/с^2$')
-axs[2].grid(True)
+    # --- 3. Ускорение ---
+    axs[2].plot(t, A * 1000)
+    axs[2].scatter(t[A.argmax()], A.max() * 1000, color='r')
+    axs[2].scatter(t[A.argmin()], A.min() * 1000, color='b')
+    axs[2].set_xlabel('t, c')
+    axs[2].set_ylabel('Ускорение, $мм/с^2$')
+    axs[2].grid(True)
 
-# --- 4. Рывок ---
-axs[3].plot(t, D * 1000)
-axs[3].scatter(t[D.argmax()], D.max() * 1000, color='r')
-axs[3].scatter(t[D.argmin()], D.min() * 1000, color='b')
-axs[3].set_xlabel('t, c')
-axs[3].set_ylabel('Рывок, $мм/с^3$')
-axs[3].grid(True)
+    # --- 4. Рывок ---
+    axs[3].plot(t, D * 1000)
+    axs[3].scatter(t[D.argmax()], D.max() * 1000, color='r')
+    axs[3].scatter(t[D.argmin()], D.min() * 1000, color='b')
+    axs[3].set_xlabel('t, c')
+    axs[3].set_ylabel('Рывок, $мм/с^3$')
+    axs[3].grid(True)
 
-# --- 5. "Кракен" ---
-axs[4].plot(t, K * 1000)
-axs[4].scatter(t[K.argmax()], K.max() * 1000, color='r')
-axs[4].scatter(t[K.argmin()], K.min() * 1000, color='b')
-axs[4].set_xlabel('t, c')
-axs[4].set_ylabel('Кракен, $мм/с^4$')
-axs[4].grid(True)
+    # --- 5. "Кракен" ---
+    axs[4].plot(t, K * 1000)
+    axs[4].scatter(t[K.argmax()], K.max() * 1000, color='r')
+    axs[4].scatter(t[K.argmin()], K.min() * 1000, color='b')
+    axs[4].set_xlabel('t, c')
+    axs[4].set_ylabel('Кракен, $мм/с^4$')
+    axs[4].grid(True)
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
 
-X = []
-Y = []
-for i in range(0, N):
-    X.append(Y_1[i] * sin(X_1[i]))
-    Y.append(Y_1[i] * cos(X_1[i]))
-for i in range(0, N):
-    X.append(Y_2[i] * sin(X_2[i]))
-    Y.append(Y_2[i] * cos(X_2[i]))
-for i in np.linspace(phi_2, phi_3, N):
-    X.append((r0 + h) * sin(i))
-    Y.append((r0 + h) * cos(i))
-for i in range(0, N):
-    X.append(Y_3[i] * sin(X_3[i]))
-    Y.append(Y_3[i] * cos(X_3[i]))
-for i in range(0, N):
-    X.append(Y_4[i] * sin(X_4[i]))
-    Y.append(Y_4[i] * cos(X_4[i]))
-for i in np.linspace(phi_5, 2*pi, N):
-    X.append((r0 - z) * sin(i))
-    Y.append((r0 - z) * cos(i))
+    X = []
+    Y = []
+    for i in range(0, N):
+        X.append(Y_1[i] * sin(X_1[i]))
+        Y.append(Y_1[i] * cos(X_1[i]))
+    for i in range(0, N):
+        X.append(Y_2[i] * sin(X_2[i]))
+        Y.append(Y_2[i] * cos(X_2[i]))
+    for i in np.linspace(phi_2, phi_3, N):
+        X.append((r0 + h) * sin(i))
+        Y.append((r0 + h) * cos(i))
+    for i in range(0, N):
+        X.append(Y_3[i] * sin(X_3[i]))
+        Y.append(Y_3[i] * cos(X_3[i]))
+    for i in range(0, N):
+        X.append(Y_4[i] * sin(X_4[i]))
+        Y.append(Y_4[i] * cos(X_4[i]))
+    for i in np.linspace(phi_5, 2*pi, N):
+        X.append((r0 - z) * sin(i))
+        Y.append((r0 - z) * cos(i))
 
-plt.plot(X, Y)
-plt.scatter([0], [0])
-plt.xlabel('X, м')
-plt.ylabel('Y, м')
-plt.grid(True)
-plt.title("Профиль кулачка")
-plt.show()
+    plt.figure(figsize=(6, 6))
+    plt.plot(X, Y)
+    plt.scatter([0], [0])
+    plt.xlabel('X, м')
+    plt.ylabel('Y, м')
+    plt.xlim(-0.03, 0.03)
+    plt.ylim(-0.03, 0.03)
+    plt.grid(True)
+    plt.title("Профиль кулачка")
+    plt.show()
 
-def out_red(text):
-    print("\033[34m{}".format(text))
+    def out_red(text):
+        print("\033[34m{}".format(text))
 
-V_max = V.max()
-V_min = V.min()
-print('Максимальная скорость толкателя:', V_max, ' м/с')
-print('Минимальная скорость толкателя:', V_min, ' м/с')
-if abs(V_max) > V_lim or abs(V_min) > V_lim:
-    out_red('Превышен придел скорости')
-print('\n')
+    V_max = V.max()
+    V_min = V.min()
+    print('Максимальная скорость толкателя:', V_max, ' м/с')
+    print('Минимальная скорость толкателя:', V_min, ' м/с')
+    if abs(V_max) > V_lim or abs(V_min) > V_lim:
+        out_red('Превышен придел скорости')
+    print('\n')
 
-A_max = A.max()
-A_min = A.min()
-print('Максимальное ускорение толкателя:', A_max, ' м/с^2')
-print('Минимальное ускорение толкателя:', A_min, ' м/с^2')
-if abs(A_max) > A_lim or abs(A_min) > A_lim:
-    out_red('Превышен придел ускорения')
-print('\n')
+    A_max = A.max()
+    A_min = A.min()
+    print('Максимальное ускорение толкателя:', A_max, ' м/с^2')
+    print('Минимальное ускорение толкателя:', A_min, ' м/с^2')
+    if abs(A_max) > A_lim or abs(A_min) > A_lim:
+        out_red('Превышен придел ускорения')
+    print('\n')
 
-D_max = D.max()
-D_min = D.min()
-print('Максимальный рывок толкателя:', D_max, ' м/с^3')
-print('Минимальный рывок толкателя:', D_min, ' м/с^3')
-if abs(D_max) > D_lim or abs(D_min) > D_lim:
-    out_red('Превышен придел рывка')
-print('\n')
+    D_max = D.max()
+    D_min = D.min()
+    print('Максимальный рывок толкателя:', D_max, ' м/с^3')
+    print('Минимальный рывок толкателя:', D_min, ' м/с^3')
+    if abs(D_max) > D_lim or abs(D_min) > D_lim:
+        out_red('Превышен придел рывка')
+    print('\n')
 
-K_max = K.max()
-K_min = K.min()
-print('Максимальный кракен толкателя:', K_max, ' м/с^4')
-print('Минимальный кракен толкателя:', K_min, ' м/с^4')
-if abs(K_max) > K_lim or abs(K_min) > K_lim:
-    out_red('Превышен придел кракена')
+    K_max = K.max()
+    K_min = K.min()
+    print('Максимальный кракен толкателя:', K_max, ' м/с^4')
+    print('Минимальный кракен толкателя:', K_min, ' м/с^4')
+    if abs(K_max) > K_lim or abs(K_min) > K_lim:
+        out_red('Превышен придел кракена')
