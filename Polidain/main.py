@@ -182,7 +182,6 @@ class PolidainConfig(BaseModel):
                     f"Ошибка в параметре {name}: значение ({value}) "
                     f"должно быть строго больше d ({self.d})"
                 )
-
         return self
 
     # --- Вычисляемые свойства (Автоматический расчет) ---
@@ -262,52 +261,92 @@ class Kulachok_polidain:
     def __init__(self, config:PolidainConfig):
         self.config = config
 
-    def fun_universal(self, fi: float, fun: Callable, sign_list: List[int], const_list: List[float]) -> float:
+    def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int], const_list: List[float]) -> float | np.ndarray:
         """
-        Универсальная функция для расчета кинематики.
-        :param fi: Текущий угол (рад)
-        :param fun: Ссылка на мат. функцию (h_phi, v_phi...)
-        :param sign_list: Список знаков для участков [уч1, уч2, уч4, уч5]
-        :param const_list: Список констант (смещений) для каждого участка + остаток
+        Векторизированная универсальная функция.
+        Принимает как скаляр, так и numpy массив.
         """
-        # Валидация входного угла
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError(f"Недопустимое значение угла: {fi:.4f} рад")
+        # Преобразуем вход в массив (если это не массив)
+        fi_arr = np.asarray(fi)
+        
+        # Если на входе был скаляр, работаем как с 0-мерным массивом, 
+        # но для удобства масок сделаем его 1-мерным
+        is_scalar = fi_arr.ndim == 0
+        if is_scalar:
+            fi_arr = np.atleast_1d(fi_arr)
 
-        # Участок 1: Выбор зазора
-        elif fi < self.config.phi_1:
-            val = fun(fi, self.config.C_list_1, self.config.k_list_1,
-                      self.config.phi_1, fi_0=0, h_kn_max=self.config.z)
-            return sign_list[0] * val + const_list[0]
+        # Инициализируем массив результатов нулями
+        result = np.zeros_like(fi_arr, dtype=float)
 
-        # Участок 2: Подъем
-        elif fi < self.config.phi_2:
-            val = fun(fi, self.config.C_list_2, self.config.k_list_2,
-                      self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h)
-            return sign_list[1] * val + const_list[1]
+        # Конфигурационные углы для краткости
+        p1 = self.config.phi_1
+        p2 = self.config.phi_2
+        p3 = self.config.phi_3
+        p4 = self.config.phi_4
+        p5 = self.config.phi_5
 
-        # Участок 3: Выдержка
-        elif fi < self.config.phi_3:
-            return const_list[2]
+        # --- Создаем маски для каждого участка ---
+        # Участок 1: 0 <= fi < phi_1
+        mask1 = (fi_arr >= 0) & (fi_arr < p1)
+        
+        # Участок 2: phi_1 <= fi < phi_2
+        mask2 = (fi_arr >= p1) & (fi_arr < p2)
+        
+        # Участок 3: phi_2 <= fi < phi_3
+        mask3 = (fi_arr >= p2) & (fi_arr < p3)
+        
+        # Участок 4: phi_3 <= fi < phi_4
+        mask4 = (fi_arr >= p3) & (fi_arr < p4)
+        
+        # Участок 5: phi_4 <= fi < phi_5
+        mask5 = (fi_arr >= p4) & (fi_arr < p5)
+        
+        # Остаток: phi_5 <= fi <= 2*pi
+        mask6 = (fi_arr >= p5) & (fi_arr <= 2 * np.pi + 1e-6) # +эпсилон для точности float
 
-        # Участок 4: Опускание (с инверсией времени)
-        elif fi < self.config.phi_4:
-            # Аргумент времени: phi_4 - fi + phi_3
-            args = self.config.phi_4 - fi + self.config.phi_3
+        # --- Вычисления для каждого участка ---
+        
+        # Участок 1
+        if np.any(mask1):
+            val = fun(fi_arr[mask1], self.config.C_list_1, self.config.k_list_1,
+                      p1, fi_0=0, h_kn_max=self.config.z)
+            result[mask1] = sign_list[0] * val + const_list[0]
+
+        # Участок 2
+        if np.any(mask2):
+            val = fun(fi_arr[mask2], self.config.C_list_2, self.config.k_list_2,
+                      p2, fi_0=p1, h_kn_max=self.config.h)
+            result[mask2] = sign_list[1] * val + const_list[1]
+
+        # Участок 3 (Выдержка - просто константа)
+        if np.any(mask3):
+            result[mask3] = const_list[2]
+
+        # Участок 4 (С инверсией аргумента)
+        if np.any(mask4):
+            # Аргумент: phi_4 - fi + phi_3
+            args = p4 - fi_arr[mask4] + p3
             val = fun(args, self.config.C_list_3, self.config.k_list_3,
-                      self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h)
-            return sign_list[2] * val + const_list[3]
+                      p4, fi_0=p3, h_kn_max=self.config.h)
+            result[mask4] = sign_list[2] * val + const_list[3]
 
-        # Участок 5: Выбор зазора (спуск)
-        elif fi < self.config.phi_5:
-            args = self.config.phi_5 - fi + self.config.phi_4
+        # Участок 5 (Спуск с инверсией)
+        if np.any(mask5):
+            args = p5 - fi_arr[mask5] + p4
             val = fun(args, self.config.C_list_4, self.config.k_list_4,
-                      self.config.phi_5, fi_0=self.config.phi_4, h_kn_max=self.config.z)
-            return sign_list[3] * val + const_list[4]
+                      p5, fi_0=p4, h_kn_max=self.config.z)
+            result[mask5] = sign_list[3] * val + const_list[4]
 
-        # Остаток цикла
-        elif fi <= 2 * pi:
-            return const_list[5]
+        # Остаток
+        if np.any(mask6):
+            result[mask6] = const_list[5]
+
+        # Возвращаем скаляр, если на входе был скаляр, иначе массив
+        if is_scalar:
+            return result.item()
+        return result
+
+    # --- Обновленные функции (vectorize больше не нужен) ---
 
     def fun_h(self, fi):
         return self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
@@ -315,26 +354,32 @@ class Kulachok_polidain:
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0,
-                                                                     self.config.r0])
+                                                                     self.config.r0 - self.config.z])
     def fun_v(self, fi):
-        return self.fun_universal(fi, v_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
 
     def fun_a(self, fi):
         return self.fun_universal(fi, a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
 
     def fun_d(self, fi):
-        return self.fun_universal(fi, d_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
 
     def fun_k(self, fi):
         return self.fun_universal(fi, k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
 
+    def fun_x(self, fi):
+        return self.fun_h(fi) * np.cos(fi)
+
+    def fun_y(self, fi):
+        return self.fun_h(fi) * np.sin(fi)
+
     def display_graphs(self, N = 1000):
         fi_list = np.linspace(0, 2 * pi, N)
-        H = np.vectorize(self.fun_h)(fi_list)
-        V = np.vectorize(self.fun_v)(fi_list)
-        A = np.vectorize(self.fun_a)(fi_list)
-        D = np.vectorize(self.fun_d)(fi_list)
-        K = np.vectorize(self.fun_k)(fi_list)
+        H = self.fun_h(fi_list) * 1000
+        V = self.fun_v(fi_list) * 1000
+        A = self.fun_a(fi_list) * 1000
+        D = self.fun_d(fi_list) * 1000
+        K = self.fun_k(fi_list) * 1000
         fi_list = fi_list / pi * 180
 
         fig, axs = plt.subplots(5, 1, figsize=(8, 20))
@@ -342,7 +387,7 @@ class Kulachok_polidain:
         # --- 1. Координата ---
         axs[0].plot(fi_list, H)
         axs[0].scatter(fi_list[H.argmax()], H.max(), color='r')
-        axs[0].set_xlabel(r'$/phi$, град')
+        axs[0].set_xlabel(r'$\phi$, град')
         axs[0].set_ylabel('Координата толкателя, мм')
         axs[0].grid(True)
 
@@ -350,7 +395,7 @@ class Kulachok_polidain:
         axs[1].plot(fi_list, V)
         axs[1].scatter(fi_list[V.argmax()], V.max(), color='r')
         axs[1].scatter(fi_list[V.argmin()], V.min(), color='r')
-        axs[1].set_xlabel(r'$/phi$, град')
+        axs[1].set_xlabel(r'$\phi$, град')
         axs[1].set_ylabel('Скорость, $мм/с$')
         axs[1].grid(True)
 
@@ -358,7 +403,7 @@ class Kulachok_polidain:
         axs[2].plot(fi_list, A)
         axs[2].scatter(fi_list[A.argmax()], A.max(), color='r')
         axs[2].scatter(fi_list[A.argmin()], A.min(), color='r')
-        axs[2].set_xlabel(r'$/phi$, град')
+        axs[2].set_xlabel(r'$\phi$, град')
         axs[2].set_ylabel('Ускорение, $мм/с^2$')
         axs[2].grid(True)
 
@@ -366,7 +411,7 @@ class Kulachok_polidain:
         axs[3].plot(fi_list, D)
         axs[3].scatter(fi_list[D.argmax()], D.max(), color='r')
         axs[3].scatter(fi_list[D.argmin()], D.min(), color='r')
-        axs[3].set_xlabel(r'$/phi$, град')
+        axs[3].set_xlabel(r'$\phi$, град')
         axs[3].set_ylabel('Рывок, $мм/с^3$')
         axs[3].grid(True)
 
@@ -374,111 +419,48 @@ class Kulachok_polidain:
         axs[4].plot(fi_list, K)
         axs[4].scatter(fi_list[K.argmax()], K.max(), color='r')
         axs[4].scatter(fi_list[K.argmin()], K.min(), color='r')
-        axs[4].set_xlabel(r'$/phi$, град')
+        axs[4].set_xlabel(r'$\phi$, град')
         axs[4].set_ylabel('Кракен, $мм/с^4$')
         axs[4].grid(True)
 
         plt.tight_layout()
         plt.show()
 
-'''
-    def fun_h(self, fi):
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError("Недопустимое значение угла поворота кулачка")
-        elif fi < self.config.phi_1:
-            return -h_phi(fi, self.config.C_list_1, self.config.k_list_1, self.config.phi_1, fi_0=0,h_kn_max=self.config.z) + self.config.r0
-        elif fi < self.config.phi_2:
-            return -h_phi(fi, self.config.C_list_2, self.config.k_list_2, self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h) + self.config.r0 + self.config.h
-        elif fi < self.config.phi_3:
-            return self.config.r0 + self.config.h
-        elif fi < self.config.phi_4:
-            return -h_phi(self.config.phi_4 - fi + self.config.phi_3, self.config.C_list_3, self.config.k_list_3, self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h) + self.config.r0 + self.config.h
-        elif fi < self.config.phi_5:
-            return -h_phi(self.config.phi_5 - fi + self.config.phi_4, self.config.C_list_4, self.config.k_list_4, self.config.phi_5, fi_0=self.config.phi_4, h_kn_max = self.config.z) + self.config.r0
-        elif fi < pi * 2:
-            return self.config.r0
+    def display_profil(self, N=1000):
+        fi_list = np.linspace(0, 2 * pi, N)
+        X = self.fun_x(fi_list)
+        Y = self.fun_y(fi_list)
 
-    def fun_v(self, fi):
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError("Недопустимое значение угла поворота кулачка")
-        elif fi < self.config.phi_1:
-            return v_phi(fi, self.config.C_list_1, self.config.k_list_1, self.config.phi_1, fi_0=0,h_kn_max=self.config.z)
-        elif fi < self.config.phi_2:
-            return v_phi(fi, self.config.C_list_2, self.config.k_list_2, self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h)
-        elif fi < self.config.phi_3:
-            return 0
-        elif fi < self.config.phi_4:
-            return v_phi(self.config.phi_4 - fi + self.config.phi_3, self.config.C_list_3, self.config.k_list_3, self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h)
-        elif fi < self.config.phi_5:
-            return v_phi(self.config.phi_5 - fi + self.config.phi_4, self.config.C_list_4, self.config.k_list_4, self.config.phi_5, fi_0=self.config.phi_4, h_kn_max = self.config.z)
-        elif fi < pi * 2:
-            return 0
+        plt.figure(figsize=(6, 6))
+        plt.plot(X, Y)
+        plt.scatter([0], [0])
+        plt.xlabel('X, м')
+        plt.ylabel('Y, м')
+        plt.xlim(np.min(X)-0.01, np.max(X)+0.01)
+        plt.ylim(np.min(Y)-0.01, np.max(Y)+0.01)
+        plt.grid(True)
+        plt.title("Профиль кулачка")
+        plt.show()
 
-    def fun_a(self, fi):
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError("Недопустимое значение угла поворота кулачка")
-        elif fi < self.config.phi_1:
-            return -a_phi(fi, self.config.C_list_1, self.config.k_list_1, self.config.phi_1, fi_0=0,h_kn_max=self.config.z)
-        elif fi < self.config.phi_2:
-            return -a_phi(fi, self.config.C_list_2, self.config.k_list_2, self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h)
-        elif fi < self.config.phi_3:
-            return 0
-        elif fi < self.config.phi_4:
-            return -a_phi(self.config.phi_4 - fi + self.config.phi_3, self.config.C_list_3, self.config.k_list_3, self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h)
-        elif fi < self.config.phi_5:
-            return -a_phi(self.config.phi_5 - fi + self.config.phi_4, self.config.C_list_4, self.config.k_list_4, self.config.phi_5, fi_0=self.config.phi_4, h_kn_max = self.config.z)
-        elif fi < pi * 2:
-            return 0
-
-    def fun_d(self, fi):
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError("Недопустимое значение угла поворота кулачка")
-        elif fi < self.config.phi_1:
-            return d_phi(fi, self.config.C_list_1, self.config.k_list_1, self.config.phi_1, fi_0=0,h_kn_max=self.config.z)
-        elif fi < self.config.phi_2:
-            return d_phi(fi, self.config.C_list_2, self.config.k_list_2, self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h)
-        elif fi < self.config.phi_3:
-            return 0
-        elif fi < self.config.phi_4:
-            return d_phi(self.config.phi_4 - fi + self.config.phi_3, self.config.C_list_3, self.config.k_list_3, self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h)
-        elif fi < self.config.phi_5:
-            return d_phi(self.config.phi_5 - fi + self.config.phi_4, self.config.C_list_4, self.config.k_list_4, self.config.phi_5, fi_0=self.config.phi_4, h_kn_max = self.config.z)
-        elif fi < pi * 2:
-            return 0
-
-    def fun_k(self, fi):
-        if fi < 0 or fi > 2 * pi:
-            raise ValidationError("Недопустимое значение угла поворота кулачка")
-        elif fi < self.config.phi_1:
-            return -k_phi(fi, self.config.C_list_1, self.config.k_list_1, self.config.phi_1, fi_0=0,h_kn_max=self.config.z)
-        elif fi < self.config.phi_2:
-            return -k_phi(fi, self.config.C_list_2, self.config.k_list_2, self.config.phi_2, fi_0=self.config.phi_1, h_kn_max=self.config.h)
-        elif fi < self.config.phi_3:
-            return 0
-        elif fi < self.config.phi_4:
-            return -k_phi(self.config.phi_4 - fi + self.config.phi_3, self.config.C_list_3, self.config.k_list_3, self.config.phi_4, fi_0=self.config.phi_3, h_kn_max=self.config.h)
-        elif fi < self.config.phi_5:
-            return -k_phi(self.config.phi_5 - fi + self.config.phi_4, self.config.C_list_4, self.config.k_list_4, self.config.phi_5, fi_0=self.config.phi_4, h_kn_max = self.config.z)
-        elif fi < pi * 2:
-            return 0
-'''
 if __name__ == '__main__':
-    # Исходные данные
-    N_k = 1000
-    D = 30.0 * 1e-3
-    h = 12.0 * 1e-3
-    z = 0.25 * 1e-3
-    f_pod = 80.0 / 180 * pi
-    f_v = 5.0 / 180 * pi
-    f_op = 75.0 / 180 * pi
-    f_z = 25 / 180 * pi
+    import matplotlib_settings.profile_1
 
-    m = 3
-    d = 2
-    k_1 = 30
-    k_2 = 30
-    k_3 = 30
-    k_4 = 30
+    # Исходные данные
+    N_k = 1000  # Количество оборотов кулачка в минут
+    D = 30.0 * 1e-3 # Базовый диаметр кулака (мм)
+    h = 12.0 * 1e-3 # Максимальное перемещение толкателя
+    z = 0.25 * 1e-3 # Тепловой зазор (мм)
+    f_pod = 80.0 / 180 * pi # Фаза подъёма (град)
+    f_v = 5.0 / 180 * pi # Фаза выдержки (град)
+    f_op = 75.0 / 180 * pi # Фаза опускания (град)
+    f_z = 25 / 180 * pi # Фаза теплового зазора (град)
+
+    m = 3 # степень при C2 только целочисленное и не меньше 3!!!
+    d = 12 # разность между степенями членов полинома только целочисленное и не меньше 1!!!
+    k_1 = 20 # коэффициент агрессивности первого участка (выбор зазора)
+    k_2 = 20 # коэффициент агрессивности второго участка (Фаза подъёма)
+    k_3 = 20 # коэффициент агрессивности четвёртого участка (Фаза опускания)
+    k_4 = 20 # коэффициент агрессивности пятого участка (Фаза выбора зазора)
     try:
         config = PolidainConfig(
             N_k=N_k,
@@ -503,4 +485,5 @@ if __name__ == '__main__':
 
     kulachok = Kulachok_polidain(config)
     kulachok.display_graphs()
+    kulachok.display_profil()
 
