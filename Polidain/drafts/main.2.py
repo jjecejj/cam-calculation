@@ -39,7 +39,7 @@ def C_fun(p, m, d):
 
 def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
     '''
-    Функция радиуса кулачка от угла поворота кулачка
+    Функция перемещения от угла поворота кулачка
     :param fi: Угол поворота кулачка
     :param C_list:Массив коэффициентов при членах полиномма
     :param k_list:Массив степеней членов полинома
@@ -262,13 +262,15 @@ class Kulachok_polidain:
         self.config = config
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int], const_list: List[float]) -> float | np.ndarray:
-        '''
-        Универсальная функция поддерживающая numpy, вычислчющая fun на всех участках
-        '''
-        
+        """
+        Векторизированная универсальная функция.
+        Принимает как скаляр, так и numpy массив.
+        """
+        # Преобразуем вход в массив (если это не массив)
         fi_arr = np.asarray(fi)
         
-        # Если на входе был скаляр, работаем как с 0-мерным массивом,
+        # Если на входе был скаляр, работаем как с 0-мерным массивом, 
+        # но для удобства масок сделаем его 1-мерным
         is_scalar = fi_arr.ndim == 0
         if is_scalar:
             fi_arr = np.atleast_1d(fi_arr)
@@ -303,6 +305,7 @@ class Kulachok_polidain:
         mask6 = (fi_arr >= p5) & (fi_arr <= 2 * np.pi + 1e-6) # +эпсилон для точности float
 
         # --- Вычисления для каждого участка ---
+        
         # Участок 1
         if np.any(mask1):
             val = fun(fi_arr[mask1], self.config.C_list_1, self.config.k_list_1,
@@ -343,6 +346,8 @@ class Kulachok_polidain:
             return result.item()
         return result
 
+    # --- Обновленные функции (vectorize больше не нужен) ---
+
     def fun_h(self, fi):
         return self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
                                                                      self.config.r0 + self.config.h,
@@ -350,49 +355,17 @@ class Kulachok_polidain:
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0,
                                                                      self.config.r0 - self.config.z])
-    def fun_h_2(self, fi:float | np.ndarray):
-        if type(fi) is np.ndarray:
-            return (self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0, self.config.r0 - self.config.z]) - self.config.r0) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return (self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0, self.config.r0 - self.config.z]) - self.config.r0) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
     def fun_v(self, fi):
         return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
-
-    def fun_v_2(self, fi):
-        if type(fi) is np.ndarray:
-            return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
 
     def fun_a(self, fi):
         return self.fun_universal(fi, a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
 
-    def fun_a_2(self, fi):
-        if type(fi) is np.ndarray:
-            return self.fun_universal(fi, a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
-
     def fun_d(self, fi):
         return self.fun_universal(fi, d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
 
-    def fun_d_2(self, fi):
-        if type(fi) is np.ndarray:
-            return self.fun_universal(fi, d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
-
     def fun_k(self, fi):
         return self.fun_universal(fi, k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
-
-    def fun_k_2(self, fi):
-        if type(fi) is np.ndarray:
-            return self.fun_universal(fi, k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
 
     def fun_x(self, fi):
         return self.fun_h(fi) * np.cos(fi)
@@ -400,10 +373,7 @@ class Kulachok_polidain:
     def fun_y(self, fi):
         return self.fun_h(fi) * np.sin(fi)
 
-    def display_graphs_kulachok(self, N = 1000):
-        '''
-        Графики для точки контакта кулачка и толкателя при условии постоянного контакта
-        '''
+    def display_graphs(self, N = 1000):
         fi_list = np.linspace(0, 2 * pi, N)
         H = self.fun_h(fi_list) * 1000
         V = self.fun_v(fi_list) * 1000
@@ -418,63 +388,7 @@ class Kulachok_polidain:
         axs[0].plot(fi_list, H)
         axs[0].scatter(fi_list[H.argmax()], H.max(), color='r')
         axs[0].set_xlabel(r'$\phi$, град')
-        axs[0].set_ylabel('Координата точки контакта, мм')
-        axs[0].grid(True)
-
-        # --- 2. Скорость ---
-        axs[1].plot(fi_list, V)
-        axs[1].scatter(fi_list[V.argmax()], V.max(), color='r')
-        axs[1].scatter(fi_list[V.argmin()], V.min(), color='r')
-        axs[1].set_xlabel(r'$\phi$, град')
-        axs[1].set_ylabel('Скорость, $мм/с$')
-        axs[1].grid(True)
-
-        # --- 3. Ускорение ---
-        axs[2].plot(fi_list, A)
-        axs[2].scatter(fi_list[A.argmax()], A.max(), color='r')
-        axs[2].scatter(fi_list[A.argmin()], A.min(), color='r')
-        axs[2].set_xlabel(r'$\phi$, град')
-        axs[2].set_ylabel('Ускорение, $мм/с^2$')
-        axs[2].grid(True)
-
-        # --- 4. Рывок ---
-        axs[3].plot(fi_list, D)
-        axs[3].scatter(fi_list[D.argmax()], D.max(), color='r')
-        axs[3].scatter(fi_list[D.argmin()], D.min(), color='r')
-        axs[3].set_xlabel(r'$\phi$, град')
-        axs[3].set_ylabel('Рывок, $мм/с^3$')
-        axs[3].grid(True)
-
-        # --- 5. "Кракен" ---
-        axs[4].plot(fi_list, K)
-        axs[4].scatter(fi_list[K.argmax()], K.max(), color='r')
-        axs[4].scatter(fi_list[K.argmin()], K.min(), color='r')
-        axs[4].set_xlabel(r'$\phi$, град')
-        axs[4].set_ylabel('Кракен, $мм/с^4$')
-        axs[4].grid(True)
-
-        plt.tight_layout()
-        plt.show()
-
-    def display_graphs_tolkatel(self, N = 1000):
-        '''
-        Графики для толкателя
-        '''
-        fi_list = np.linspace(0, 2 * pi, N)
-        H = self.fun_h_2(fi_list) * 1000
-        V = self.fun_v_2(fi_list) * 1000
-        A = self.fun_a_2(fi_list) * 1000
-        D = self.fun_d_2(fi_list) * 1000
-        K = self.fun_k_2(fi_list) * 1000
-        fi_list = fi_list / pi * 180
-
-        fig, axs = plt.subplots(5, 1, figsize=(8, 20))
-
-        # --- 1. Координата ---
-        axs[0].plot(fi_list, H)
-        axs[0].scatter(fi_list[H.argmax()], H.max(), color='r')
-        axs[0].set_xlabel(r'$\phi$, град')
-        axs[0].set_ylabel('Перемещение толкателя, мм')
+        axs[0].set_ylabel('Координата толкателя, мм')
         axs[0].grid(True)
 
         # --- 2. Скорость ---
@@ -570,6 +484,6 @@ if __name__ == '__main__':
         print("Ошибка в данных:", e)
 
     kulachok = Kulachok_polidain(config)
-    kulachok.display_graphs_tolkatel()
+    kulachok.display_graphs()
     kulachok.display_profil()
 
