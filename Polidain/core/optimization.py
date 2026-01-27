@@ -2,7 +2,6 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from multiprocessing import freeze_support
 from dataclasses import dataclass, field
-from pyzirev_profil import R_func as R_func_pyzirev
 from cam_geometry import Kulachok_polidain
 from schemas import PolidainConfig
 from typing import Callable
@@ -12,7 +11,6 @@ from typing import Callable
 class OptimizeConfig:
     D: float  # Базовый диаметр кулака (мм)
     h: float  # Максимальное перемещение толкателя
-    f_dif: float # Разница фаз исследуемого кулачка
     N_k: float = 1000 # Количество оборотов кулачка в минут
 
 @dataclass
@@ -46,14 +44,7 @@ class GibridOptimizationConfig:
     m: list = field(default_factory=list)
     d: list = field(default_factory=list)
 
-def fi_list_dif(fi_array: np.ndarray, f_dif: float) -> np.ndarray:
-    """
-    Векторизированный сдвиг фазы
-    """
-    shifted = fi_array - f_dif
-    return np.where(shifted <= 0, shifted + 2 * np.pi, shifted)
-
-def fun_optimize_gibrid(x, fi_list_1 = None, fi_list_2 = None, m = None, d = None, R_func = None, optimize_config = None):
+def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, optimize_config = None):
     z = x[0]  # Тепловой зазор (мм)
     f_pod = x[1]  # Фаза подъёма (град)
     f_v = x[2] # Фаза выдержки (град)
@@ -83,22 +74,21 @@ def fun_optimize_gibrid(x, fi_list_1 = None, fi_list_2 = None, m = None, d = Non
             k_4=k_4
         )
         kulachok = Kulachok_polidain(config)
-        temp = np.sum(np.abs(kulachok.fun_h(fi_list_2) - R_func(fi_list_1)))
+        temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
         return temp
     except:
         return 1e6
 
-def differential_evolution_optimization(m, d, optimize_config, R_func, differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None):
+def differential_evolution_optimization(m, d, optimize_config, R_func, differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N = 1000):
     if differential_evolution_config is None:
         differential_evolution_config = DifferentialEvolutionConfig()
     if bounds_config is None:
         bounds_config = BoundsConfig()
-    fi_list_1 = np.linspace(0, 2 * np.pi, 1000)
-    fi_list_2 = fi_list_dif(fi_list_1, optimize_config.f_dif)
+    fi_list = np.linspace(0, 2 * np.pi, N)
     result = differential_evolution(
         fun_optimize_gibrid,
         bounds_config.bounds,
-        args = (fi_list_1, fi_list_2, m, d, R_func, optimize_config),
+        args = (fi_list, m, d, R_func, optimize_config),
         strategy=differential_evolution_config.strategy,
         maxiter=differential_evolution_config.maxiter,
         popsize=differential_evolution_config.popsize,
@@ -110,17 +100,18 @@ def differential_evolution_optimization(m, d, optimize_config, R_func, different
     print("Best result:", result.x.tolist())
     print("Function value:", result.fun)
 
-def gibrid_optimization(gibrid_optimization_config: GibridOptimizationConfig, optimize_config: OptimizeConfig, R_func: Callable[[np.ndarray], np.ndarray], differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None):
+def gibrid_optimization(gibrid_optimization_config: GibridOptimizationConfig, optimize_config: OptimizeConfig, R_func: Callable[[np.ndarray], np.ndarray], differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N: int = 1000):
     for i in gibrid_optimization_config.m:
         for j in gibrid_optimization_config.d:
             print("m:", i, "d:", j)
-            differential_evolution_optimization(i, j, optimize_config, R_func, differential_evolution_config = differential_evolution_config, bounds_config = bounds_config)
+            differential_evolution_optimization(i, j, optimize_config, R_func, differential_evolution_config = differential_evolution_config, bounds_config = bounds_config, N = N)
 
 if __name__ == '__main__':
     freeze_support()
+
+    from pyzirev_profil import R_func as R_func_pyzirev
     gibrid_optimization(GibridOptimizationConfig(m = [3],
                                                  d = [4, 5, 6, 7, 8]),
                         OptimizeConfig(D = 17.8009 * 2,
-                                       h = 30.8018837267781,
-                                       f_dif = 1.1423973285781066),
+                                       h = 30.8018837267781),
                         R_func_pyzirev)

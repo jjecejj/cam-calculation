@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Union
 from numpy import ndarray
+from core.cam_geometry import set_polidain_data, set_profil_data
 
 
 def set_config(config):
@@ -77,7 +78,7 @@ def set_initial_angle(_fi_list: list | ndarray, initial_angle: float | int = 0.0
     return i_list
 
 
-def __calculate_optimal_angle(kulachok):
+def calculate_optimal_angle(kulachok):
     """
     Внутренняя функция для автоматического определения оптимального угла сдвига.
 
@@ -196,7 +197,7 @@ def display_all(kulachok, initial_angle: Union[float, int, str] = 0):
         ValueError: Если initial_angle имеет недопустимый тип.
     """
     if initial_angle == "auto":
-        target_angle = __calculate_optimal_angle(kulachok)
+        target_angle = calculate_optimal_angle(kulachok)
     elif isinstance(initial_angle, (int, float)):
         target_angle = initial_angle
     else:
@@ -205,3 +206,71 @@ def display_all(kulachok, initial_angle: Union[float, int, str] = 0):
     display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle)
     display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle)
     display_profil(kulachok.profil_data, initial_angle=target_angle)
+
+def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
+    if data_1.fi_list.shape[0] != data_2.fi_list.shape[0]:
+        raise ValueError("Оба кулачка должны иметь одинаковую размерность массивов")
+
+    fig, axs = plt.subplots(5, 1, figsize=(8, 20))
+    fig.suptitle("Графики для толкателя", fontsize=16)
+
+    i_list = set_initial_angle(data_1.fi_list, initial_angle=initial_angle)
+
+    _plot_component(axs[0], data_1.fi_list, data_1.H[i_list], 'Радиус кулачка, мм')
+    _plot_component(axs[0], data_2.fi_list, data_2.H[i_list], 'Радиус кулачка, мм')
+
+    _plot_component(axs[1], data_1.fi_list, data_1.V[i_list], 'Скорость, $мм/с$')
+    _plot_component(axs[1], data_2.fi_list, data_2.V[i_list], 'Скорость, $мм/с$')
+
+    _plot_component(axs[2], data_1.fi_list, data_1.A[i_list], 'Ускорение, $мм/с^2$')
+    _plot_component(axs[2], data_2.fi_list, data_2.A[i_list], 'Ускорение, $мм/с^2$')
+
+    _plot_component(axs[3], data_1.fi_list, data_1.D[i_list], 'Рывок, $мм/с^3$')
+    _plot_component(axs[3], data_2.fi_list, data_2.D[i_list], 'Рывок, $мм/с^3$')
+
+    _plot_component(axs[4], data_1.fi_list, data_1.K[i_list], 'Кракен, $мм/с^4$')
+    _plot_component(axs[4], data_2.fi_list, data_2.K[i_list], 'Кракен, $мм/с^4$')
+
+    plt.tight_layout()
+    plt.show()
+
+def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
+    plt.figure(figsize=(6, 6))
+
+    i_list = set_initial_angle(data_1.fi_list, initial_angle=initial_angle)
+    X_1 = np.asarray(data_1.X)
+    Y_1 = np.asarray(data_1.Y)
+    X_2 = np.asarray(data_2.X)
+    Y_2 = np.asarray(data_2.Y)
+
+    # Используем i_list для упорядочивания точек профиля при отрисовке линии
+    plt.plot(X_1[i_list], Y_1[i_list])
+    plt.plot(X_2[i_list], Y_2[i_list])
+    plt.scatter([0], [0], color='black', marker='x', label='Центр вращения')
+
+    plt.xlabel('X, мм')
+    plt.ylabel('Y, мм')
+
+    # Отступы для красивого отображения
+    margin = 0.01
+    plt.xlim(np.min(X_1) - margin, np.max(X_1) + margin)
+    plt.ylim(np.min(Y_1) - margin, np.max(Y_1) + margin)
+    plt.xlim(np.min(X_2) - margin, np.max(X_2) + margin)
+    plt.ylim(np.min(Y_2) - margin, np.max(Y_2) + margin)
+
+    plt.grid(True)
+    plt.title("Профиль кулачка")
+    plt.axis('equal')
+    plt.legend()
+    plt.show()
+
+def display_all_comprasion(kulachok, fun_list: list, initial_angle: Union[float, int, str] = 0):
+    if initial_angle == "auto":
+        target_angle = calculate_optimal_angle(kulachok)
+    elif isinstance(initial_angle, (int, float)):
+        target_angle = initial_angle
+    else:
+        raise ValueError("initial_angle должен быть числом или 'auto'")
+
+    display_graphs_comprasion(kulachok.kulachok_data, set_polidain_data(fun_list[0:5], N = kulachok.kulachok_data.fi_list.shape[0]),  initial_angle=target_angle)
+    display_profil_comprasion(kulachok.profil_data, set_profil_data(fun_list[5:7], N = kulachok.profil_data.fi_list.shape[0]), initial_angle=target_angle)

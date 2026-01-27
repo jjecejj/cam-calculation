@@ -1,4 +1,3 @@
-from math import sin, cos, pi
 import numpy as np
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
@@ -134,7 +133,7 @@ class PolidainConfig(BaseModel):
     @property
     def omega(self) -> float:
         """Угловая скорость (рад/с)"""
-        return self.N_k * 2 * pi / 60
+        return self.N_k * 2 * np.pi / 60
 
     @property
     def T(self) -> float:

@@ -1,11 +1,12 @@
-from core.cam_geometry import Kulachok_polidain
+from core.cam_geometry import Kulachok_polidain, set_polidain_data
 from exporters.dxf_creator import build_profile
 from config import AppConfig
 from core.schemas import PolidainConfig
-from vizualization.plotter import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profil, display_all
+from vizualization.plotter import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profil, display_all, display_all_comprasion, calculate_optimal_angle
 from math import pi
 
 if __name__ == '__main__':
+    # Исходные данные
     cam = PolidainConfig(
             N_k = 1000,
             D = 30.0 * 1e-3,
@@ -24,9 +25,16 @@ if __name__ == '__main__':
             k_4 = 20
 )
     appConfig = AppConfig(cam = cam)
+
+    # Решение кулачка
     kulachok = Kulachok_polidain(appConfig.cam)
-    kulachok.solve()
-    kulachok.set_profil_flatpusher()
+    kulachok.solve(kulachok_type='flat')
+
+    # Построение графиков
     set_config(appConfig.plot)
-    display_all(kulachok, initial_angle="auto")
+    initial_angle = calculate_optimal_angle(kulachok)
+    display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle)
+    display_profil(kulachok.profil_data, initial_angle=initial_angle)
+
+    # Импорт геометрии
     build_profile(kulachok.profil_data)

@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Callable, List
-from core.schemas import PolidainConfig, PolidainData, ProfilData
+from core.schemas import PolidainData, ProfilData
 
 
 class CamProfileError(Exception):
@@ -13,6 +13,10 @@ class PusherDiameterError(CamProfileError):
 
 class ProfileSmoothnessError(CamProfileError):
     """Ошибка: негладкий профиль (подрез профиля)"""
+    pass
+
+class SolvePreliminaryCalculations(CamProfileError):
+    """Ошибка: Не были проведены необходимые вычисления"""
     pass
 
 def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
@@ -103,12 +107,39 @@ def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
                 ((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 4))
     return temp * h_kn_max
 
+def set_polidain_data(fun_list:list, N = 1000):
+    fi_list = np.linspace(0, 2 * np.pi, N)
+    H = fun_list[0](fi_list) * 1000
+    V = fun_list[1](fi_list) * 1000
+    A = fun_list[2](fi_list) * 1000
+    D = fun_list[3](fi_list) * 1000
+    K = fun_list[4](fi_list) * 1000
+    fi_list = fi_list / np.pi * 180
+    return PolidainData(H = H, V = V, A = A, D = D, K = K, fi_list = fi_list)
+
+def set_profil_data(fun_list:list, N = 1000):
+    fi_list = np.linspace(0, 2 * np.pi, N)
+    X = fun_list[0](fi_list) * 1000
+    Y = fun_list[1](fi_list) * 1000
+    fi_list = fi_list / np.pi * 180
+    return ProfilData(X = X, Y = Y, fi_list = fi_list)
+
+def fi_list_dif(fi_array: np.ndarray, f_dif: float) -> np.ndarray:
+    """
+    Векторизированный сдвиг фазы
+    """
+    shifted = fi_array - f_dif
+    return np.where(shifted <= 0, shifted + 2 * np.pi, shifted)
+
 class Kulachok_polidain:
     def __init__(self, config):
         self.config = config
         self.kulachok_data = None
         self.tolkatel_data = None
         self.profil_data = None
+        self.kulachok_solve_flag = False
+        self.tolkatel_solve_flag = False
+        self.profil_solve_flag = False
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int],
                       const_list: List[float]) -> float | np.ndarray:
@@ -199,7 +230,7 @@ class Kulachok_polidain:
                                                                 self.config.r0 + self.config.h,
                                                                 self.config.r0 + self.config.h,
                                                                 self.config.r0,
-                                                                self.config.r0 - self.config.z]) - self.config.r0
+                                                                self.config.r0 - self.config.z])
 
     def fun_h_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
@@ -265,37 +296,30 @@ class Kulachok_polidain:
         return self.fun_h(fi) * np.sin(fi)
 
     def set_kulachok_data(self, N = 1000):
-        fi_list = np.linspace(0, 2 * np.pi, N)
-        H = self.fun_h(fi_list) * 1000
-        V = self.fun_v(fi_list) * 1000
-        A = self.fun_a(fi_list) * 1000
-        D = self.fun_d(fi_list) * 1000
-        K = self.fun_k(fi_list) * 1000
-        fi_list = fi_list / np.pi * 180
-        self.kulachok_data = PolidainData(H = H, V = V, A = A, D = D, K = K, fi_list = fi_list)
+        self.kulachok_data = set_polidain_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], N = N)
+        self.kulachok_solve_flag = True
 
     def set_tolkatel_data(self, N = 1000):
-        fi_list = np.linspace(0, 2 * np.pi, N)
-        H = self.fun_h_2(fi_list) * 1000
-        V = self.fun_v_2(fi_list) * 1000
-        A = self.fun_a_2(fi_list) * 1000
-        D = self.fun_d_2(fi_list) * 1000
-        K = self.fun_k_2(fi_list) * 1000
-        fi_list = fi_list / np.pi * 180
-        self.tolkatel_data = PolidainData(H = H, V = V, A = A, D = D, K = K, fi_list = fi_list)
+        self.tolkatel_data = set_polidain_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], N = N)
+        self.tolkatel_solve_flag = True
 
     def set_profil_data(self, N = 1000):
-        fi_list = np.linspace(0, 2 * np.pi, N)
-        X = self.fun_x(fi_list) * 1000
-        Y = self.fun_y(fi_list) * 1000
-        self.profil_data = ProfilData(fi_list = fi_list, X = X, Y = Y)
+        self.profil_data = set_profil_data([self.fun_x, self.fun_y], N = N)
+        self.profil_solve_flag = True
 
-    def solve(self):
-        self.set_kulachok_data()
-        self.set_tolkatel_data()
-        self.set_profil_data()
+    def solve(self, N = 1000, kulachok_type = None):
+        self.set_tolkatel_data(N = N)
+        self.set_kulachok_data(N = N)
+        if kulachok_type is None:
+            self.set_profil_data(N = N)
+        elif kulachok_type == 'flat':
+            self.set_profil_flatpusher()
+        else:
+            raise ValueError('kulachok_type must be either "flat" or None')
 
     def profil_flatpusher_check(self, curvature_flag = None):
+        if not(self.kulachok_solve_flag and self.tolkatel_solve_flag):
+            raise SolvePreliminaryCalculations(f"Не были проведены предварительные вычисления закона движения толкатиля")
         max_v = np.max(self.tolkatel_data.V)
         if self.config.D_t * 1e3 <= max_v:
             raise PusherDiameterError(

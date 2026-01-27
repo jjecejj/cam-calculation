@@ -1,8 +1,8 @@
 from pathlib import Path
-from math import pi
 from dataclasses import dataclass, field
 from matplotlib import rcParams
 from core.schemas import PolidainConfig
+import numpy as np
 
 @dataclass
 class PlotSettings:
@@ -30,10 +30,10 @@ polidainConfig_default = PolidainConfig(
             D_t = 32.0 * 1e-3,
             h = 12.0 * 1e-3,
             z = 0.25 * 1e-3,
-            f_pod = 80.0 / 180 * pi,
-            f_v = 5.0 / 180 * pi,
-            f_op = 75.0 / 180 * pi,
-            f_z = 25 / 180 * pi,
+            f_pod = 80.0 / 180 * np.pi,
+            f_v = 5.0 / 180 * np.pi,
+            f_op = 75.0 / 180 * np.pi,
+            f_z = 25 / 180 * np.pi,
             m = 3,
             d = 12,
             k_1 = 20,
