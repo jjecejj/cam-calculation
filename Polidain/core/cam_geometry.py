@@ -140,6 +140,7 @@ class Kulachok_polidain:
         self.kulachok_solve_flag = False
         self.tolkatel_solve_flag = False
         self.profil_solve_flag = False
+        self.solve_type = None
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int],
                       const_list: List[float]) -> float | np.ndarray:
@@ -306,18 +307,21 @@ class Kulachok_polidain:
     def set_profil_data(self, N = 1000):
         self.profil_data = set_profil_data([self.fun_x, self.fun_y], N = N)
         self.profil_solve_flag = True
+        self.solve_type = "thin"
 
     def solve(self, N = 1000, kulachok_type = None):
         self.set_tolkatel_data(N = N)
         self.set_kulachok_data(N = N)
-        if kulachok_type is None:
+        if kulachok_type == 'thin':
             self.set_profil_data(N = N)
         elif kulachok_type == 'flat':
-            self.set_profil_flatpusher()
+            self.set_profil_flat()
+        elif kulachok_type == 'roller':
+            pass
         else:
-            raise ValueError('kulachok_type must be either "flat" or None')
+            raise ValueError('kulachok_type must be either "flat" or "thin" or "roller"')
 
-    def profil_flatpusher_check(self, curvature_flag = None):
+    def profil_flat_check(self, curvature_flag = None):
         if not(self.kulachok_solve_flag and self.tolkatel_solve_flag):
             raise SolvePreliminaryCalculations(f"Не были проведены предварительные вычисления закона движения толкатиля")
         max_v = np.max(self.tolkatel_data.V)
@@ -334,12 +338,21 @@ class Kulachok_polidain:
                 "Необходимо повысить минимальный радиус кривизны."
             )
 
-    def set_profil_flatpusher(self, curvature_flag = False):
-        self.profil_flatpusher_check(curvature_flag = curvature_flag)
+    def profil_roller_check(self):
+        pass
+
+    def set_profil_flat(self, curvature_flag = False):
+        self.profil_flat_check(curvature_flag = curvature_flag)
         self.tolkatel_data.V = self.tolkatel_data.V
         E = self.tolkatel_data.V / self.config.omega
         fi_list = self.tolkatel_data.fi_list * np.pi / 180
-        R = self.kulachok_data.H + 1e3 * self.config.D / 2
+        R = self.tolkatel_data.H + self.config.D * 1e3 / 2
         X = R * np.cos(fi_list) - E * np.sin(fi_list)
         Y = R * np.sin(fi_list) + E * np.cos(fi_list)
         self.profil_data = ProfilData(fi_list=fi_list, X=X, Y=Y)
+        self.profil_solve_flag = True
+        self.solve_type = "flat"
+
+    def set_profil_roller(self):
+        pass
+        self.solve_type = "roller"

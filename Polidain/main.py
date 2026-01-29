@@ -4,6 +4,8 @@ from config import AppConfig
 from core.schemas import PolidainConfig
 from vizualization.plotter import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profil, display_all, display_all_comprasion, calculate_optimal_angle
 from math import pi
+from vizualization.rotate_animation import display_animation, set_rotate_data
+from math import sqrt
 
 if __name__ == '__main__':
     # Исходные данные
@@ -28,13 +30,14 @@ if __name__ == '__main__':
 
     # Решение кулачка
     kulachok = Kulachok_polidain(appConfig.cam)
-    kulachok.solve(kulachok_type='flat')
+    kulachok.solve(kulachok_type='thin', N=100)
 
     # Построение графиков
     set_config(appConfig.plot)
-    initial_angle = calculate_optimal_angle(kulachok)
-    display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle)
-    display_profil(kulachok.profil_data, initial_angle=initial_angle)
+    #initial_angle = calculate_optimal_angle(kulachok)
+    #display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle)
+    #display_profil(kulachok.profil_data, initial_angle=initial_angle)
+    display_animation(set_rotate_data(kulachok, tolkatel_type=kulachok.solve_type), save_flag=True)
 
     # Импорт геометрии
-    build_profile(kulachok.profil_data)
+    #build_profile(kulachok.profil_data)

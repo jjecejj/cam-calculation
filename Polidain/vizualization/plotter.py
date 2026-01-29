@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Union
 from numpy import ndarray
-from core.cam_geometry import set_polidain_data, set_profil_data
 
 
 def set_config(config):
@@ -264,7 +263,7 @@ def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
     plt.legend()
     plt.show()
 
-def display_all_comprasion(kulachok, fun_list: list, initial_angle: Union[float, int, str] = 0):
+def display_all_comprasion(kulachok, data_polidain, data_profil, initial_angle: Union[float, int, str] = 0):
     if initial_angle == "auto":
         target_angle = calculate_optimal_angle(kulachok)
     elif isinstance(initial_angle, (int, float)):
@@ -272,5 +271,5 @@ def display_all_comprasion(kulachok, fun_list: list, initial_angle: Union[float,
     else:
         raise ValueError("initial_angle должен быть числом или 'auto'")
 
-    display_graphs_comprasion(kulachok.kulachok_data, set_polidain_data(fun_list[0:5], N = kulachok.kulachok_data.fi_list.shape[0]),  initial_angle=target_angle)
-    display_profil_comprasion(kulachok.profil_data, set_profil_data(fun_list[5:7], N = kulachok.profil_data.fi_list.shape[0]), initial_angle=target_angle)
+    display_graphs_comprasion(kulachok.kulachok_data, data_polidain,  initial_angle=target_angle)
+    display_profil_comprasion(kulachok.profil_data, data_profil, initial_angle=target_angle)
