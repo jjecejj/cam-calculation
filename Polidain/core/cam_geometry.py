@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Callable, List
 from core.schemas import PolidainData, ProfilData
-
+from scipy.interpolate import CubicSpline
 
 class CamProfileError(Exception):
     """Базовый класс для ошибок профиля кулачка"""
@@ -341,15 +341,31 @@ class Kulachok_polidain:
     def profil_roller_check(self):
         pass
 
-    def set_profil_flat(self, curvature_flag = False):
+    def __set_profil_flat(self, curvature_flag = False):
         self.profil_flat_check(curvature_flag = curvature_flag)
-        self.tolkatel_data.V = self.tolkatel_data.V
         E = self.tolkatel_data.V / self.config.omega
         fi_list = self.tolkatel_data.fi_list * np.pi / 180
         R = self.tolkatel_data.H + self.config.D * 1e3 / 2
         X = R * np.cos(fi_list) - E * np.sin(fi_list)
         Y = R * np.sin(fi_list) + E * np.cos(fi_list)
         self.profil_data = ProfilData(fi_list=fi_list, X=X, Y=Y)
+        self.profil_solve_flag = True
+        self.solve_type = "flat"
+
+    def set_profil_flat(self):
+        E = self.tolkatel_data.V / self.config.omega
+        R = np.sqrt(E**2 + (self.tolkatel_data.H + self.config.D * 1e3 / 2)**2)
+        delta_fi = np.atan(E / (self.tolkatel_data.H + self.config.D * 1e3 / 2))
+        fi_list_tolkatel = self.tolkatel_data.fi_list * np.pi / 180
+        fi_list_kulachok = (fi_list_tolkatel + delta_fi) % (2 * np.pi)
+        index = np.argsort(fi_list_kulachok)
+        R = R[index]
+        fi_list_kulachok = fi_list_kulachok[index]
+        unique_idx = np.unique(fi_list_kulachok, return_index=True)[1]
+        fi_list_kulachok = fi_list_kulachok[unique_idx]
+        R = R[unique_idx]
+        R_func = CubicSpline(fi_list_kulachok, R, bc_type='periodic')
+        self.profil_data = ProfilData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
         self.profil_solve_flag = True
         self.solve_type = "flat"
 

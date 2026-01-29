@@ -30,13 +30,13 @@ if __name__ == '__main__':
 
     # Решение кулачка
     kulachok = Kulachok_polidain(appConfig.cam)
-    kulachok.solve(kulachok_type='thin', N=100)
+    kulachok.solve(kulachok_type='flat', N=100)
 
     # Построение графиков
     set_config(appConfig.plot)
-    #initial_angle = calculate_optimal_angle(kulachok)
+    initial_angle = calculate_optimal_angle(kulachok)
     #display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle)
-    #display_profil(kulachok.profil_data, initial_angle=initial_angle)
+    display_profil(kulachok.profil_data, initial_angle=initial_angle)
     display_animation(set_rotate_data(kulachok, tolkatel_type=kulachok.solve_type), save_flag=True)
 
     # Импорт геометрии
