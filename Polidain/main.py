@@ -5,10 +5,9 @@ from core.schemas import PolidainConfig
 from vizualization.plotter import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profil, display_all, display_all_comprasion, calculate_optimal_angle
 from math import pi
 from vizualization.rotate_animation import display_animation, set_rotate_data
-from math import sqrt
+from core.options import calculate, CamSolveOptions
 
 if __name__ == '__main__':
-    # Исходные данные
     cam = PolidainConfig(
             N_k = 1000,
             D = 30.0 * 1e-3,
@@ -27,17 +26,14 @@ if __name__ == '__main__':
             k_4 = 20
 )
     appConfig = AppConfig(cam = cam)
-
-    # Решение кулачка
-    kulachok = Kulachok_polidain(appConfig.cam)
-    kulachok.solve(kulachok_type='flat', N=100)
-
-    # Построение графиков
     set_config(appConfig.plot)
-    initial_angle = calculate_optimal_angle(kulachok)
-    #display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle)
-    display_profil(kulachok.profil_data, initial_angle=initial_angle)
-    display_animation(set_rotate_data(kulachok, tolkatel_type=kulachok.solve_type), save_flag=True)
-
-    # Импорт геометрии
-    #build_profile(kulachok.profil_data)
+    cam_solve_options = CamSolveOptions(cam = cam,
+                                        graphs_tolkatel_flag = True,
+                                        graphs_kulachok_flag = False,
+                                        graphs_profil_flag = True,
+                                        display_animation_flag = False,
+                                        save_animation_flag = False,
+                                        import_dxf_flag = False,
+                                        dxf_profil_name = "kulachok"
+    )
+    calculate(cam_solve_options)

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from matplotlib import rcParams
 from core.schemas import PolidainConfig
 import numpy as np
+from multiprocessing import freeze_support
 
 @dataclass
 class PlotSettings:
@@ -54,3 +55,4 @@ class AppConfig:
     def __post_init__(self):
         # Автоматически создать папку output, если её нет
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        freeze_support()

@@ -2,8 +2,8 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from multiprocessing import freeze_support
 from dataclasses import dataclass, field
-from cam_geometry import Kulachok_polidain
-from schemas import PolidainConfig
+from core.cam_geometry import Kulachok_polidain
+from core.schemas import PolidainConfig
 from typing import Callable
 
 
