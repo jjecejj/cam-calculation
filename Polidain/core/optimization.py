@@ -40,11 +40,11 @@ class DifferentialEvolutionConfig:
     integrality: list[bool] = field(default_factory=lambda: [False, False, False, False, False, True, True, True, True])
 
 @dataclass
-class GibridOptimizationConfig:
+class HybridOptimizationConfig:
     m: list = field(default_factory=list)
     d: list = field(default_factory=list)
 
-def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, optimize_config = None):
+def fun_optimize_hybrid(x, fi_list = None, m = None, d = None, R_func = None, optimize_config = None):
     z = x[0]  # Тепловой зазор (мм)
     f_pod = x[1]  # Фаза подъёма (град)
     f_v = x[2] # Фаза выдержки (град)
@@ -86,7 +86,7 @@ def differential_evolution_optimization(m, d, optimize_config, R_func, different
         bounds_config = BoundsConfig()
     fi_list = np.linspace(0, 2 * np.pi, N)
     result = differential_evolution(
-        fun_optimize_gibrid,
+        fun_optimize_hybrid,
         bounds_config.bounds,
         args = (fi_list, m, d, R_func, optimize_config),
         strategy=differential_evolution_config.strategy,
@@ -100,9 +100,9 @@ def differential_evolution_optimization(m, d, optimize_config, R_func, different
     print("Best result:", result.x.tolist())
     print("Function value:", result.fun)
 
-def gibrid_optimization(gibrid_optimization_config: GibridOptimizationConfig, optimize_config: OptimizeConfig, R_func: Callable[[np.ndarray], np.ndarray], differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N: int = 1000):
-    for i in gibrid_optimization_config.m:
-        for j in gibrid_optimization_config.d:
+def hybrid_optimization(hybrid_optimization_config: HybridOptimizationConfig, optimize_config: OptimizeConfig, R_func: Callable[[np.ndarray], np.ndarray], differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N: int = 1000):
+    for i in hybrid_optimization_config.m:
+        for j in hybrid_optimization_config.d:
             print("m:", i, "d:", j)
             differential_evolution_optimization(i, j, optimize_config, R_func, differential_evolution_config = differential_evolution_config, bounds_config = bounds_config, N = N)
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     freeze_support()
 
     from pyzirev_profil import R_func as R_func_pyzirev
-    gibrid_optimization(GibridOptimizationConfig(m = [3],
+    hybrid_optimization(HybridOptimizationConfig(m = [3],
                                                  d = [4, 5, 6, 7, 8]),
                         OptimizeConfig(D = 17.8009 * 2,
                                        h = 30.8018837267781),

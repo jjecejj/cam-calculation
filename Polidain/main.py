@@ -1,6 +1,6 @@
 from config import AppConfig
 from core.schemas import PolidainConfig
-from vizualization.plotter import set_config
+from visualization.plotter import set_config
 import numpy as np
 from core.options import calculate, CamSolveOptions
 

@@ -291,7 +291,7 @@ def display_dashboard(kulachok,
     plt.tight_layout()
     plt.show()
 
-def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
+def display_graphs_comparison(data_1, data_2, initial_angle: float | int = 0):
     if data_1.fi_list.shape[0] != data_2.fi_list.shape[0]:
         raise ValueError("Оба кулачка должны иметь одинаковую размерность массивов")
 
@@ -319,7 +319,7 @@ def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
     plt.tight_layout()
     plt.show()
 
-def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
+def display_profil_comparison(data_1, data_2, initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
 
     i_list = set_initial_angle(data_1.fi_list, initial_angle=initial_angle)
@@ -345,7 +345,7 @@ def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
     plt.legend()
     plt.show()
 
-def display_all_comprasion(kulachok, data_polidain, data_profil, initial_angle: Union[float, int, str] = 0):
+def display_all_comparison(kulachok, data_polidain, data_profil, initial_angle: Union[float, int, str] = 0):
     if initial_angle == "auto":
         target_angle = calculate_optimal_angle(kulachok)
     elif isinstance(initial_angle, (int, float)):
@@ -353,5 +353,5 @@ def display_all_comprasion(kulachok, data_polidain, data_profil, initial_angle: 
     else:
         raise ValueError("initial_angle должен быть числом или 'auto'")
 
-    display_graphs_comprasion(kulachok.kulachok_data, data_polidain,  initial_angle=target_angle)
-    display_profil_comprasion(kulachok.profil_data, data_profil, initial_angle=target_angle)
+    display_graphs_comparison(kulachok.kulachok_data, data_polidain,  initial_angle=target_angle)
+    display_profil_comparison(kulachok.profil_data, data_profil, initial_angle=target_angle)

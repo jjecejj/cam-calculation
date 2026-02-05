@@ -4,13 +4,13 @@ from core.cam_geometry import Kulachok_polidain
 from core.schemas import PolidainConfig
 from core.optimization import (
     OptimizeConfig, BoundsConfig, DifferentialEvolutionConfig,
-    GibridOptimizationConfig, gibrid_optimization
+    HybridOptimizationConfig, hybrid_optimization
 )
-from vizualization.plotter import (
+from visualization.plotter import (
     display_graphs_kulachok, display_graphs_tolkatel,
     display_profil, calculate_optimal_angle, display_dashboard
 )
-from vizualization.rotate_animation import display_animation, set_rotate_data, display_dashboard_animation
+from visualization.rotate_animation import display_animation, set_rotate_data, display_dashboard_animation
 from exporters.dxf_creator import build_profile
 from core.pyzirev_profil import R_func as R_func_pyzirev
 
@@ -36,7 +36,7 @@ class CamSolveOptions(BaseModel):
     display_animation_flag: bool = Field(default=False, description="Запустить анимацию работы механизма")
     animation_profil_and_graphs_together_flag: bool = Field(default=False, description="Запустить анимацию работы механизма c графиками")
     save_animation_flag: bool = Field(default=False, description="Сохранить анимацию в файл")
-    animation_intarval: int = Field(default=50, description="Интервал между кадрами (мс)")
+    animation_interval: int = Field(default=50, description="Интервал между кадрами (мс)")
     profil_animation_name_file: str = Field(default="animation_profile", description="Имя файла для сохранения анимации профиля")
     dashboard_animation_name_file: str = Field(default="animation_dashboard", description="Имя файла для сохранения анимации работы механизма c графиками")
     animation_graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков анимации")
@@ -68,13 +68,13 @@ class CamOptimizationOptions(BaseModel):
     Параметры для решения задачи оптимизации параметров кулачка.
     """
     optimiz_config: OptimizeConfig
-    gibrid_optimization_config: GibridOptimizationConfig
+    hybrid_optimization_config: HybridOptimizationConfig
     bounds_config: BoundsConfig = Field(default_factory=BoundsConfig, description="Границы переменных оптимизации")
     differential_evolution_config: DifferentialEvolutionConfig = Field(
         default_factory=DifferentialEvolutionConfig, description="Настройки алгоритма дифференциальной эволюции"
     )
     R_func: Callable = Field(default_factory=lambda: R_func_pyzirev, description="Функция расчета радиус-вектора")
-    display_comprasion_profil_flag: bool = Field(default=True, description="Сравнить полученный профиль с эталонным")
+    display_comparison_profil_flag: bool = Field(default=True, description="Сравнить полученный профиль с эталонным")
     N: int = Field(default=1000, ge=10, description="Разрешение профиля при оптимизации")
 
 
@@ -115,14 +115,14 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
         rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.solve_type)
         display_animation(
             rotate_data,
-            interval=cam_solve_options.animation_intarval,
+            interval=cam_solve_options.animation_interval,
             save_flag=cam_solve_options.save_animation_flag,
             name_file=cam_solve_options.profil_animation_name_file,
             pause_flag=cam_solve_options.animation_pause_flag,
         )
     if cam_solve_options.animation_profil_and_graphs_together_flag:
         display_dashboard_animation(kulachok, tolkatel_type=kulachok.solve_type,
-                                    interval=cam_solve_options.animation_intarval,
+                                    interval=cam_solve_options.animation_interval,
                                     save_flag=cam_solve_options.save_animation_flag,
                                     name_file=cam_solve_options.dashboard_animation_name_file,
                                     graphs_type=cam_solve_options.animation_graphs_argument_type,
@@ -141,8 +141,8 @@ def calculate_cam_optimization(cam_optimization_options: CamOptimizationOptions)
     """
     Запускает процесс гибридной оптимизации кулачкового механизма.
     """
-    gibrid_optimization(
-        cam_optimization_options.gibrid_optimization_config,
+    hybrid_optimization(
+        cam_optimization_options.hybrid_optimization_config,
         cam_optimization_options.optimiz_config,
         cam_optimization_options.R_func,
         differential_evolution_config=cam_optimization_options.differential_evolution_config,
