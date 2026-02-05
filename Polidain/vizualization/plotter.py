@@ -1,12 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Union, Literal
-from numpy import ndarray
-from core.schemas import PolidainData
-
-import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from typing import Literal, Union
+from core.schemas import ProfilData, PolidainData
 
 def set_config(config):
     """
@@ -22,7 +18,7 @@ def set_config(config):
     plt.rcParams['mathtext.it'] = config.mathtext_it
 
 
-def _plot_component(ax, x, y, ylabel, xlabel):
+def _plot_component(ax, x, y, ylabel:str, xlabel:str):
     """
     Универсальная вспомогательная функция для построения графика с экстремумами.
     """
@@ -72,7 +68,7 @@ def calculate_optimal_angle(kulachok):
     return np.degrees(-(2 * np.pi - kulachok.config.phi_5) / 2)
 
 
-def display_graphs_kulachok(data, initial_angle: float | int = 0,
+def display_graphs_kulachok(data:PolidainData, initial_angle: float | int = 0,
                             graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     fig, axs = plt.subplots(5, 1, figsize=(8, 20))
     fig.suptitle("Графики для кулачка", fontsize=16)
@@ -81,39 +77,39 @@ def display_graphs_kulachok(data, initial_angle: float | int = 0,
         x_data = data.fi_list_degree
         xl = r'$\phi$, град'
         i_list = set_initial_angle(x_data, initial_angle=initial_angle, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_rad[i_list], 'Координата точки контакта, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_degree[i_list], 'Скорость, $мм/град$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_degree[i_list], 'Ускорение, $мм/град^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_degree[i_list], 'Рывок, $мм/град^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_degree[i_list], 'Кракен, $мм/град^4$', xl)
+        _plot_component(axs[0], x_data, data.H_rad[i_list], 'Координата точки контакта, мм', xl)
+        _plot_component(axs[1], x_data, data.V_degree[i_list], 'Скорость, $мм/град$', xl)
+        _plot_component(axs[2], x_data, data.A_degree[i_list], 'Ускорение, $мм/град^2$', xl)
+        _plot_component(axs[3], x_data, data.D_degree[i_list], 'Рывок, $мм/град^3$', xl)
+        _plot_component(axs[4], x_data, data.K_degree[i_list], 'Кракен, $мм/град^4$', xl)
 
     elif graphs_type == 'rad':
         x_data = data.fi_list_rad
         xl = r'$\phi$, рад'
         initial_angle_rad = initial_angle * np.pi / 180
         i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_rad[i_list], 'Координата точки контакта, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_rad[i_list], 'Скорость, $мм/рад$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_rad[i_list], 'Ускорение, $мм/рад^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_rad[i_list], 'Рывок, $мм/рад^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_rad[i_list], 'Кракен, $мм/рад^4$', xl)
+        _plot_component(axs[0], x_data, data.H_rad[i_list], 'Координата точки контакта, мм', xl)
+        _plot_component(axs[1], x_data, data.V_rad[i_list], 'Скорость, $мм/рад$', xl)
+        _plot_component(axs[2], x_data, data.A_rad[i_list], 'Ускорение, $мм/рад^2$', xl)
+        _plot_component(axs[3], x_data, data.D_rad[i_list], 'Рывок, $мм/рад^3$', xl)
+        _plot_component(axs[4], x_data, data.K_rad[i_list], 'Кракен, $мм/рад^4$', xl)
 
     elif graphs_type == 't':
         x_data = data.t_list
         xl = "t, c"
         initial_time = initial_angle * np.pi / 180 / data.omega_rad if initial_angle != 0 else 0
         i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_t[i_list], 'Координата точки контакта, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_t[i_list], 'Скорость, $мм/с$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
+        _plot_component(axs[0], x_data, data.H_t[i_list], 'Координата точки контакта, мм', xl)
+        _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/с$', xl)
+        _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
+        _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
+        _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
 
     plt.tight_layout()
     plt.show()
 
 
-def display_graphs_tolkatel(data, initial_angle: float | int = 0,
+def display_graphs_tolkatel(data:PolidainData, initial_angle: float | int = 0,
                             graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     fig, axs = plt.subplots(5, 1, figsize=(8, 20))
     fig.suptitle("Графики для толкателя", fontsize=16)
@@ -122,38 +118,38 @@ def display_graphs_tolkatel(data, initial_angle: float | int = 0,
         x_data = data.fi_list_degree
         xl = r'$\phi$, град'
         i_list = set_initial_angle(x_data, initial_angle=initial_angle, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_t[i_list], 'Скорость, $мм/град$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_t[i_list], 'Ускорение, $мм/град^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_t[i_list], 'Рывок, $мм/град^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_t[i_list], 'Кракен, $мм/град^4$', xl)
+        _plot_component(axs[0], x_data, data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
+        _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/град$', xl)
+        _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/град^2$', xl)
+        _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/град^3$', xl)
+        _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/град^4$', xl)
 
     elif graphs_type == 'rad':
         x_data = data.fi_list_rad
         xl = r'$\phi$, рад'
         initial_angle_rad = initial_angle * np.pi / 180
         i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_t[i_list], 'Скорость, $мм/рад$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_t[i_list], 'Ускорение, $мм/рад^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_t[i_list], 'Рывок, $мм/рад^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_t[i_list], 'Кракен, $мм/рад^4$', xl)
+        _plot_component(axs[0], x_data, data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
+        _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/рад$', xl)
+        _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/рад^2$', xl)
+        _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/рад^3$', xl)
+        _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/рад^4$', xl)
 
     elif graphs_type == 't':
         x_data = data.t_list
         xl = "t, c"
         initial_time = initial_angle * np.pi / 180 / data.omega_rad if initial_angle != 0 else 0
         i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type = graphs_type)
-        _plot_component(axs[0], x_data[i_list], data.H_t[i_list], 'Перемещение толкателя, мм', xl)
-        _plot_component(axs[1], x_data[i_list], data.V_t[i_list], 'Скорость, $мм/с$', xl)
-        _plot_component(axs[2], x_data[i_list], data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
-        _plot_component(axs[3], x_data[i_list], data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
-        _plot_component(axs[4], x_data[i_list], data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
+        _plot_component(axs[0], x_data, data.H_t[i_list], 'Перемещение толкателя, мм', xl)
+        _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/с$', xl)
+        _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
+        _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
+        _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
 
     plt.tight_layout()
     plt.show()
 
-def display_profil(data, initial_angle: float | int = 0):
+def display_profil(data:ProfilData, initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
     i_list = set_initial_angle(data.fi_list, initial_angle=initial_angle)
     X = np.asarray(data.X)
@@ -184,6 +180,116 @@ def display_all(kulachok, initial_angle: Union[float, int, str] = 0):
     display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle)
     display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle)
     display_profil(kulachok.profil_data, initial_angle=target_angle)
+
+def display_dashboard(kulachok,
+                      initial_angle: Union[float, int, str] = 0,
+                      graphs_type: Literal['t', 'rad', 'degree'] = 'degree',
+                      target: Literal['tolkatel', 'kulachok'] = 'tolkatel'):
+    """
+    Отображает единую панель (Dashboard): слева 5 графиков кинематики, справа профиль кулачка.
+
+    Args:
+        kulachok: Объект механизма.
+        initial_angle: Начальный угол (число или 'auto').
+        graphs_type: Тип оси X ('degree', 'rad', 't').
+        target: Чьи графики кинематики строить: 'tolkatel' (толкатель) или 'kulachok' (кулачок).
+    """
+    # 1. Определяем угол сдвига
+    if initial_angle == "auto":
+        target_angle = calculate_optimal_angle(kulachok)
+    elif isinstance(initial_angle, (int, float)):
+        target_angle = initial_angle
+    else:
+        raise ValueError("initial_angle должен быть числом или 'auto'")
+
+    # 2. Выбираем данные для кинематики (Толкатель или Кулачок)
+    if target == 'tolkatel':
+        data = kulachok.tolkatel_data
+        base_title = "Кинематика толкателя"
+        # Заголовки для Y осей
+        ylabels = ['Перемещение, мм', 'Скорость', 'Ускорение', 'Рывок', 'Кракен']
+    else:
+        data = kulachok.kulachok_data
+        base_title = "Кинематика кулачка"
+        ylabels = ['Координата, мм', 'Скорость', 'Ускорение', 'Рывок', 'Кракен']
+
+    # 3. Подготовка данных в зависимости от типа оси X (t, rad, degree)
+    if graphs_type == 'degree':
+        x_data = data.fi_list_degree
+        xlabel = r'$\phi$, град'
+        # Единицы измерения для подписей
+        units = ['', r'$мм/град$', r'$мм/град^2$', r'$мм/град^3$', r'$мм/град^4$']
+        i_list = set_initial_angle(x_data, initial_angle=target_angle, angle_type=graphs_type)
+        # Данные Y
+        y_datasets = [data.H_degree, data.V_degree, data.A_degree, data.D_degree, data.K_degree]  # H_rad обычно в мм, ок
+
+    elif graphs_type == 'rad':
+        x_data = data.fi_list_rad
+        xlabel = r'$\phi$, рад'
+        units = ['', r'$мм/рад$', r'$мм/рад^2$', r'$мм/рад^3$', r'$мм/рад^4$']
+        initial_angle_rad = target_angle * np.pi / 180
+        i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type=graphs_type)
+        y_datasets = [data.H_rad, data.V_rad, data.A_rad, data.D_rad, data.K_rad]
+
+    elif graphs_type == 't':
+        x_data = data.t_list
+        xlabel = "t, c"
+        units = ['', r'$мм/с$', r'$мм/с^2$', r'$мм/с^3$', r'$мм/с^4$']
+        initial_time = target_angle * np.pi / 180 / data.omega_rad if target_angle != 0 else 0
+        i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type=graphs_type)
+        y_datasets = [data.H_t, data.V_t, data.A_t, data.D_t, data.K_t]
+
+    # --- СОЗДАНИЕ ГРАФИЧЕСКОГО ОКНА ---
+    fig = plt.figure(figsize=(16, 10))
+    # Сетка: 5 строк, 3 колонки.
+    # Графики занимают первые 2 колонки (слева), Профиль занимает 3-ю колонку (справа)
+    gs = gridspec.GridSpec(5, 3, figure=fig)
+
+    # === ЛЕВАЯ ЧАСТЬ: Кинематика ===
+    ax_kinematics = []
+    for i in range(5):
+        ax = fig.add_subplot(gs[i, 0:2])  # Занимаем 2 колонки из 3
+        # Формируем полный заголовок оси Y с единицами измерения
+        full_ylabel = f"{ylabels[i]} {units[i]}" if i > 0 else ylabels[i]
+        _plot_component(ax, x_data, y_datasets[i][i_list], full_ylabel, xlabel)
+
+        # Убираем подписи оси X у всех графиков кроме нижнего для чистоты
+        if i < 4:
+            ax.set_xlabel("")
+            ax.tick_params(labelbottom=False)
+        ax_kinematics.append(ax)
+
+    ax_kinematics[0].set_title(base_title, fontsize=14)
+
+    # === ПРАВАЯ ЧАСТЬ: Профиль ===
+    ax_profile = fig.add_subplot(gs[:, 2])  # Занимаем последнюю колонку, все строки
+
+    profil_data = kulachok.profil_data
+    # Сортировка для профиля всегда через set_initial_angle (она внутри понимает градусы/радианы по умолчанию)
+    # Но profil_data.fi_list обычно в градусах, поэтому используем target_angle
+    i_list_prof = set_initial_angle(profil_data.fi_list, initial_angle=target_angle)
+
+    X = np.asarray(profil_data.X)
+    Y = np.asarray(profil_data.Y)
+
+    ax_profile.plot(X[i_list_prof], Y[i_list_prof], linewidth=2)
+    ax_profile.scatter([0], [0], color='black', marker='x', s=100, label='Центр вращения')
+
+    # Оформление профиля
+    ax_profile.set_xlabel('X, мм')
+    ax_profile.set_ylabel('Y, мм')
+    ax_profile.set_title("Профиль кулачка", fontsize=14)
+    ax_profile.axis('equal')  # Важно: сохраняем пропорции
+    ax_profile.grid(True)
+    ax_profile.legend()
+
+    # Добавляем отступы
+    margin = 2  # мм
+    ax_profile.set_xlim(np.min(X) - margin, np.max(X) + margin)
+    ax_profile.set_ylim(np.min(Y) - margin, np.max(Y) + margin)
+
+    plt.tight_layout()
+    plt.show()
 
 def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
     if data_1.fi_list.shape[0] != data_2.fi_list.shape[0]:

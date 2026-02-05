@@ -316,7 +316,7 @@ class Kulachok_polidain:
         elif kulachok_type == 'flat':
             self.set_profil_flat()
         elif kulachok_type == 'roller':
-            pass
+            self.set_profil_roller()
         else:
             raise ValueError('kulachok_type must be either "flat" or "thin" or "roller"')
 
@@ -336,9 +336,6 @@ class Kulachok_polidain:
                 f"Негладкий профиль (min = {min_curvature:.4f}). "
                 "Необходимо повысить минимальный радиус кривизны."
             )
-
-    def profil_roller_check(self):
-        pass
 
     def set_profil_flat(self):
         # Проверка возможности построения профиля для заданного закона движения толкателя
@@ -369,6 +366,68 @@ class Kulachok_polidain:
         self.profil_solve_flag = True
         self.solve_type = "flat"
 
+    def profil_roller_check(self):
+        h = self.tolkatel_data.H_rad
+        v = self.tolkatel_data.V_rad
+        a = self.tolkatel_data.A_rad
+        Rb = self.config.D * 1e3 / 2.0
+        Rr = self.config.R_r * 1e3
+        Rc = Rb + Rr + h
+
+        num = (Rc ** 2 + v ** 2) ** 1.5
+        den = (Rc ** 2 + 2 * v ** 2 - Rc * a)
+        den[den == 0] = 1e-9
+        rho_c = num / den
+        rho_p = rho_c - Rr
+        if np.any(rho_p < 0):
+            raise ProfileSmoothnessError(
+                f"Негладкий профиль (min = {np.min(rho_p):.4f}). "
+                "Необходимо повысить минимальный радиус кривизны."
+            )
     def set_profil_roller(self):
-        pass
+        """
+        Рассчитывает профиль кулачка на основе конфигурации и кинематических данных.
+         """
+
+        self.profil_roller_check()
+
+        # 1. Извлечение данных
+        phi = self.tolkatel_data.fi_list_rad
+        h = self.tolkatel_data.H_rad
+        v = self.tolkatel_data.V_rad
+        a = self.tolkatel_data.A_rad
+
+        # Геометрические параметры
+        Rb = self.config.D * 1e3 / 2.0  # Базовый радиус
+        Rr = self.config.R_r * 1e3  # Радиус ролика
+
+        # 2. Расчет теоретического профиля (Траектория центра ролика)
+        # Текущий радиус-вектор до центра ролика
+        Rc = Rb + Rr + h
+
+        # Координаты центра ролика (в полярной системе, связанной с кулачком)
+        # Используем sin/cos так, чтобы при phi=0 толкатель был на оси Y
+        xc = Rc * np.sin(phi)
+        yc = Rc * np.cos(phi)
+
+        # 3. Расчет действительного профиля
+        # Производные координат центра ролика по углу phi
+        dxc = v * np.sin(phi) + Rc * np.cos(phi)
+        dyc = v * np.cos(phi) - Rc * np.sin(phi)
+
+        # Модуль вектора касательной (расстояние от мгновенного центра скоростей)
+        norm_factor = np.sqrt(dxc ** 2 + dyc ** 2)
+
+        # Обработка деления на ноль
+        norm_factor[norm_factor == 0] = 1e-9
+
+        # Координаты конструктивного профиля (смещение по нормали внутрь)
+        # Знаки выбраны для условия "выпуклый кулачок, ролик снаружи"
+        xp = xc + Rr * (dyc / norm_factor)
+        yp = yc - Rr * (dxc / norm_factor)
+
+        self.profil_data = ProfilData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
+                                      X=xp,
+                                      Y=yp,)
+        self.profil_solve_flag = True
         self.solve_type = "roller"

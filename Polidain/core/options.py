@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Literal, Callable, Union
 from core.cam_geometry import Kulachok_polidain
 from core.schemas import PolidainConfig
@@ -8,9 +8,9 @@ from core.optimization import (
 )
 from vizualization.plotter import (
     display_graphs_kulachok, display_graphs_tolkatel,
-    display_profil, calculate_optimal_angle
+    display_profil, calculate_optimal_angle, display_dashboard
 )
-from vizualization.rotate_animation import display_animation, set_rotate_data
+from vizualization.rotate_animation import display_animation, set_rotate_data, display_dashboard_animation
 from exporters.dxf_creator import build_profile
 from core.pyzirev_profil import R_func as R_func_pyzirev
 
@@ -30,18 +30,38 @@ class CamSolveOptions(BaseModel):
     graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")
     graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков")
     graphs_profil_flag: bool = Field(default=False, description="Показать профиль кулачка")
+    profil_and_graphs_together_flag: bool = Field(default=False, description="Показать профиль кулачка и графики в одном окне")
 
     # Настройки анимации
     display_animation_flag: bool = Field(default=False, description="Запустить анимацию работы механизма")
+    animation_profil_and_graphs_together_flag: bool = Field(default=False, description="Запустить анимацию работы механизма c графиками")
     save_animation_flag: bool = Field(default=False, description="Сохранить анимацию в файл")
     animation_intarval: int = Field(default=50, description="Интервал между кадрами (мс)")
-    animation_name_file: str = Field(default="animation", description="Имя файла для сохранения анимации")
+    profil_animation_name_file: str = Field(default="animation_profile", description="Имя файла для сохранения анимации профиля")
+    dashboard_animation_name_file: str = Field(default="animation_dashboard", description="Имя файла для сохранения анимации работы механизма c графиками")
+    animation_graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков анимации")
+    animation_pause_flag: bool = Field(default=False, description="Поддержка паузы во время анимации")
 
     # Экспорт
     import_dxf_flag: bool = Field(default=False, description="Экспортировать профиль в формат DXF")
     dxf_profil_name: str = Field(default="kulachok_1", description="Имя файла DXF")
     dxf_line_type: Literal["spline", "line"] = Field(default="spline", description="Тип геометрии в DXF")
 
+    @model_validator(mode='after')
+    def resolve_conflicting_flags(self):
+        """
+        Автоматически разрешает конфликты флагов визуализации.
+        Если выбран режим 'together', он имеет приоритет.
+        """
+        if self.profil_and_graphs_together_flag:
+            # Вариант 1: Принудительно включаем остальные флаги,
+            # чтобы логика программы, проверяющая graphs_profil_flag, сработала.
+            self.graphs_profil_flag = True
+
+            if not self.graphs_tolkatel_flag and not self.graphs_kulachok_flag:
+                self.graphs_kulachok_flag = True
+
+        return self
 
 class CamOptimizationOptions(BaseModel):
     """
@@ -68,17 +88,27 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
 
     # 2. Определение начального угла
     if cam_solve_options.calculate_optimal_initial_angle:
-        cam_solve_options.initial_angle = calculate_optimal_angle(kulachok)
+        initial_angle = calculate_optimal_angle(kulachok)
+    else:
+        initial_angle = cam_solve_options.initial_angle
 
     # 3. Отрисовка графиков
-    if cam_solve_options.graphs_tolkatel_flag:
-        display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+    if cam_solve_options.profil_and_graphs_together_flag:
+        if cam_solve_options.graphs_kulachok_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type, target='kulachok')
 
-    if cam_solve_options.graphs_kulachok_flag:
-        display_graphs_kulachok(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+        if cam_solve_options.graphs_tolkatel_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=cam_solve_options.graphs_argument_type,  target='tolkatel')
 
-    if cam_solve_options.graphs_profil_flag:
-        display_profil(kulachok.profil_data, initial_angle=cam_solve_options.initial_angle)
+    else:
+        if cam_solve_options.graphs_tolkatel_flag:
+            display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+
+        if cam_solve_options.graphs_kulachok_flag:
+            display_graphs_kulachok(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+
+        if cam_solve_options.graphs_profil_flag:
+            display_profil(kulachok.profil_data, initial_angle=initial_angle)
 
     # 4. Анимация
     if cam_solve_options.display_animation_flag:
@@ -87,8 +117,16 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
             rotate_data,
             interval=cam_solve_options.animation_intarval,
             save_flag=cam_solve_options.save_animation_flag,
-            name_file=cam_solve_options.animation_name_file
+            name_file=cam_solve_options.profil_animation_name_file,
+            pause_flag=cam_solve_options.animation_pause_flag,
         )
+    if cam_solve_options.animation_profil_and_graphs_together_flag:
+        display_dashboard_animation(kulachok, tolkatel_type=kulachok.solve_type,
+                                    interval=cam_solve_options.animation_intarval,
+                                    save_flag=cam_solve_options.save_animation_flag,
+                                    name_file=cam_solve_options.dashboard_animation_name_file,
+                                    graphs_type=cam_solve_options.animation_graphs_argument_type,
+                                    pause_flag=cam_solve_options.animation_pause_flag,)
 
     # 5. Экспорт в DXF
     if cam_solve_options.import_dxf_flag:
