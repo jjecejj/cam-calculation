@@ -9,24 +9,6 @@ if __name__ == '__main__':
     cam = PolidainConfig(
         N_k=1000,
         D=30.0 * 1e-3,
-        D_t=32.0 * 1e-3,
-        h=12.0 * 1e-3,
-        z=0.25 * 1e-3,
-        f_pod=80.0 / 180 * np.pi,
-        f_v=5.0 / 180 * np.pi,
-        f_op=75.0 / 180 * np.pi,
-        f_z=25 / 180 * np.pi,
-        m=3,
-        d=12,
-        k_1=20,
-        k_2=20,
-        k_3=20,
-        k_4=20,
-        R_r = 5 * 1e-3,
-)
-    cam = PolidainConfig(
-        N_k=1000,
-        D=30.0 * 1e-3,
         D_t=30.0 * 1e-3,
         h=2.0 * 1e-3,
         z=0.25 * 1e-3,
@@ -54,9 +36,10 @@ if __name__ == '__main__':
                                         dxf_profil_name = "tolkatel",
                                         calculate_optimal_initial_angle = True,
                                         graphs_argument_type = 'degree',
-                                        kulachok_type = 'flat',
-                                        N = 100,
-                                        profil_and_graphs_together_flag = False,
+                                        kulachok_type = 'roller',
+                                        N = 1000,
+                                        profil_and_graphs_together_flag = True,
                                         animation_profil_and_graphs_together_flag = True,
+                                        animation_pause_flag = True,
     )
     calculate(cam_solve_options)

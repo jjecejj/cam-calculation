@@ -39,7 +39,8 @@ class RotateProfileData(BaseModel):
 
 
 def rotate_profile_data(X, Y, angle):
-    angle = -angle + np.pi / 2
+    # !!! ИЗМЕНЕНИЕ: -np.pi / 2 поворачивает 0-ю точку вниз (на отрицательную Y)
+    angle = -angle - np.pi / 2
     x_new = X * np.cos(angle) - Y * np.sin(angle)
     y_new = X * np.sin(angle) + Y * np.cos(angle)
     return (x_new, y_new)
@@ -55,6 +56,7 @@ def set_rotate_data(kulachok, tolkatel_type):
         movement_data.append(rotate_profile_data(kulachok.profil_data.X, kulachok.profil_data.Y, i))
 
     # Здесь H_rad + D/2 - это расстояние от центра вращения до "поверхности" толкателя (S + R_base)
+    # Это положительная величина (радиус-вектор)
     tolkatel_data = kulachok.tolkatel_data.H_rad.copy() + kulachok.config.D * 1e3 / 2
 
     tolkatel_D_t = kulachok.config.D_t * 1e3
@@ -91,7 +93,6 @@ def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bo
         follower_element, = ax.plot([], [], 'r-', lw=3, label='Толкатель')
 
     elif data.tolkatel_type == "roller":
-        # Начальное положение не так важно, оно обновится, но логичнее сразу поднять на R_r
         follower_element = Circle((0, 0), radius=data.tolkatel_R_r, color='r', fill=True, alpha=0.5, label='Ролик')
         ax.add_patch(follower_element)
 
@@ -112,7 +113,6 @@ def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bo
         width = data.tolkatel_D_t / 2
         limit = max(max_val, max_h + 10, width + 10)
     elif data.tolkatel_type == "roller":
-        # Учитываем, что верхняя точка ролика это (H + 2*R_r) или (Center + R_r)
         limit = max(max_val, max_h + data.tolkatel_R_r + 10)
     else:
         limit = max(max_val, max_h + 10)
@@ -126,17 +126,22 @@ def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bo
         x_cam, y_cam = data.movement_data[frame_idx]
         cam_line.set_data(x_cam, y_cam)
 
+        # current_h - это расстояние от центра до поверхности толкателя (положительное число)
+        # Так как толкатель снизу, координата Y будет отрицательной: -current_h
         current_h = data.tolkatel_data[frame_idx]
 
         if data.tolkatel_type == "flat":
             half_w = data.tolkatel_D_t / 2
-            follower_element.set_data([-half_w, half_w], [current_h, current_h])
+            # !!! ИЗМЕНЕНИЕ: ставим -current_h
+            follower_element.set_data([-half_w, half_w], [-current_h, -current_h])
 
         elif data.tolkatel_type == "roller":
-            follower_element.set_center((0, current_h + data.tolkatel_R_r))
+            # !!! ИЗМЕНЕНИЕ: Центр круга уходит вниз: -(H + R_r)
+            follower_element.set_center((0, -(current_h + data.tolkatel_R_r)))
 
         else:  # thin
-            follower_element.set_data([0], [current_h])
+            # !!! ИЗМЕНЕНИЕ: Y = -current_h
+            follower_element.set_data([0], [-current_h])
 
         return cam_line, follower_element
 
@@ -234,7 +239,8 @@ def display_dashboard_animation(kulachok, tolkatel_type,
     ax_mech = fig.add_subplot(gs[:, 2])
     ax_mech.set_aspect('equal')
     ax_mech.grid(True, linestyle='--', alpha=0.6)
-    ax_mech.set_title("Механизм")
+    # !!! ИЗМЕНЕНИЕ: Новое название
+    ax_mech.set_title("Кулачок")
 
     cam_line, = ax_mech.plot([], [], 'b-', lw=2, label='Кулачок')
     ax_mech.plot(0, 0, 'k+', markersize=10)
@@ -289,15 +295,18 @@ def display_dashboard_animation(kulachok, tolkatel_type,
 
         if rotate_data.tolkatel_type == "flat":
             half_w = rotate_data.tolkatel_D_t / 2
-            follower_element.set_data([-half_w, half_w], [current_h, current_h])
+            # !!! ИЗМЕНЕНИЕ: -current_h
+            follower_element.set_data([-half_w, half_w], [-current_h, -current_h])
             updated_artists.append(follower_element)
 
         elif rotate_data.tolkatel_type == "roller":
-            follower_element.set_center((0, current_h + rotate_data.tolkatel_R_r))
+            # !!! ИЗМЕНЕНИЕ: -(H + R_r)
+            follower_element.set_center((0, -(current_h + rotate_data.tolkatel_R_r)))
             updated_artists.append(follower_element)
 
         else:
-            follower_element.set_data([0], [current_h])
+            # !!! ИЗМЕНЕНИЕ: -current_h
+            follower_element.set_data([0], [-current_h])
             updated_artists.append(follower_element)
 
         return updated_artists
