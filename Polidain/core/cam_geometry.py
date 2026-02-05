@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Callable, List
 from core.schemas import PolidainData, ProfilData
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline, interp1d
 
 class CamProfileError(Exception):
     """Базовый класс для ошибок профиля кулачка"""
@@ -107,15 +107,14 @@ def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
                 ((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 4))
     return temp * h_kn_max
 
-def set_polidain_data(fun_list:list, N = 1000):
+def set_polidain_data(fun_list:list, omega:float, N: int = 1000):
     fi_list = np.linspace(0, 2 * np.pi, N)
     H = fun_list[0](fi_list) * 1000
     V = fun_list[1](fi_list) * 1000
     A = fun_list[2](fi_list) * 1000
     D = fun_list[3](fi_list) * 1000
     K = fun_list[4](fi_list) * 1000
-    fi_list = fi_list / np.pi * 180
-    return PolidainData(H = H, V = V, A = A, D = D, K = K, fi_list = fi_list)
+    return PolidainData(H_rad = H, V_rad = V, A_rad = A, D_rad = D, K_rad = K, fi_list_rad = fi_list, omega_rad = omega)
 
 def set_profil_data(fun_list:list, N = 1000):
     fi_list = np.linspace(0, 2 * np.pi, N)
@@ -297,11 +296,11 @@ class Kulachok_polidain:
         return self.fun_h(fi) * np.sin(fi)
 
     def set_kulachok_data(self, N = 1000):
-        self.kulachok_data = set_polidain_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], N = N)
+        self.kulachok_data = set_polidain_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega, N = N)
         self.kulachok_solve_flag = True
 
     def set_tolkatel_data(self, N = 1000):
-        self.tolkatel_data = set_polidain_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], N = N)
+        self.tolkatel_data = set_polidain_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], self.config.omega, N = N)
         self.tolkatel_solve_flag = True
 
     def set_profil_data(self, N = 1000):
@@ -321,16 +320,16 @@ class Kulachok_polidain:
         else:
             raise ValueError('kulachok_type must be either "flat" or "thin" or "roller"')
 
-    def profil_flat_check(self, curvature_flag = None):
+    def profil_flat_check(self, curvature_flag = True):
         if not(self.kulachok_solve_flag and self.tolkatel_solve_flag):
             raise SolvePreliminaryCalculations(f"Не были проведены предварительные вычисления закона движения толкатиля")
-        max_v = np.max(self.tolkatel_data.V)
-        if self.config.D_t * 1e3 <= max_v:
+        max_v = np.max(self.tolkatel_data.V_t / self.config.omega)
+        if self.config.D_t * 1e3 / 2 <= max_v:
             raise PusherDiameterError(
                 f"Недостаточный диаметр толкателя: {self.config.D_t * 1e3:.2f} <= {max_v:.2f}"
             )
 
-        curvature_check = self.tolkatel_data.H + self.tolkatel_data.A + 500 * self.config.D
+        curvature_check = self.tolkatel_data.H_rad + self.tolkatel_data.A_rad + 500 * self.config.D
         min_curvature = np.min(curvature_check)
         if min_curvature <= 0 and curvature_flag:
             raise ProfileSmoothnessError(
@@ -341,30 +340,31 @@ class Kulachok_polidain:
     def profil_roller_check(self):
         pass
 
-    def __set_profil_flat(self, curvature_flag = False):
-        self.profil_flat_check(curvature_flag = curvature_flag)
-        E = self.tolkatel_data.V / self.config.omega
-        fi_list = self.tolkatel_data.fi_list * np.pi / 180
-        R = self.tolkatel_data.H + self.config.D * 1e3 / 2
-        X = R * np.cos(fi_list) - E * np.sin(fi_list)
-        Y = R * np.sin(fi_list) + E * np.cos(fi_list)
-        self.profil_data = ProfilData(fi_list=fi_list, X=X, Y=Y)
-        self.profil_solve_flag = True
-        self.solve_type = "flat"
-
     def set_profil_flat(self):
-        E = self.tolkatel_data.V / self.config.omega
-        R = np.sqrt(E**2 + (self.tolkatel_data.H + self.config.D * 1e3 / 2)**2)
-        delta_fi = np.atan(E / (self.tolkatel_data.H + self.config.D * 1e3 / 2))
-        fi_list_tolkatel = self.tolkatel_data.fi_list * np.pi / 180
+        # Проверка возможности построения профиля для заданного закона движения толкателя
+        self.profil_flat_check()
+
+        # Расчёт угла откланения и эксцентроситета
+        E = self.tolkatel_data.V_t / self.tolkatel_data.omega_rad
+        R = np.sqrt(E**2 + (self.tolkatel_data.H_t + self.config.D * 1e3 / 2)**2)
+        delta_fi = np.atan(E / (self.tolkatel_data.H_t + self.config.D * 1e3 / 2))
+        fi_list_tolkatel = self.tolkatel_data.fi_list_rad
         fi_list_kulachok = (fi_list_tolkatel + delta_fi) % (2 * np.pi)
+
+        # Выправка массивов перед интерполяцией
         index = np.argsort(fi_list_kulachok)
         R = R[index]
         fi_list_kulachok = fi_list_kulachok[index]
         unique_idx = np.unique(fi_list_kulachok, return_index=True)[1]
         fi_list_kulachok = fi_list_kulachok[unique_idx]
         R = R[unique_idx]
-        R_func = CubicSpline(fi_list_kulachok, R, bc_type='periodic')
+        fi_list_kulachok[0] = 0
+        R[0] = self.config.D * 1e3 / 2
+        fi_list_kulachok[-1] = 2 * np.pi
+        R[-1] = self.config.D * 1e3 / 2
+
+        # Интерполяция
+        R_func = interp1d(fi_list_kulachok, R, kind="linear")
         self.profil_data = ProfilData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
         self.profil_solve_flag = True
         self.solve_type = "flat"

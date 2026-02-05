@@ -20,16 +20,15 @@ class CamSolveOptions(BaseModel):
     Параметры для решения прямой задачи расчета геометрии кулачка.
     """
     cam: PolidainConfig
-    kulachok_type: Literal['thin', 'flat', 'roller'] = Field(
-        default='thin', description="Тип толкателя: остроконечный, плоский или роликовый"
-    )
+    kulachok_type: Literal['thin', 'flat', 'roller'] = Field(default='thin', description="Тип толкателя: остроконечный, плоский или роликовый")
     N: int = Field(default=1000, ge=10, description="Количество точек расчета")
     initial_angle: float = Field(default=0.0, ge=0.0, le=360.0, description="Начальный угол поворота (град)")
-    calculate_optimal_initial_angle: bool = Field(default=True, description="Авторасчет оптимального начального угла")
+    calculate_optimal_initial_angle: bool = Field(default=True, description="Авторассчет оптимального начального угла")
 
     # Флаги визуализации
     graphs_tolkatel_flag: bool = Field(default=False, description="Показать графики движения толкателя")
     graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")
+    graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков")
     graphs_profil_flag: bool = Field(default=False, description="Показать профиль кулачка")
 
     # Настройки анимации
@@ -73,10 +72,10 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
 
     # 3. Отрисовка графиков
     if cam_solve_options.graphs_tolkatel_flag:
-        display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle)
+        display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
 
     if cam_solve_options.graphs_kulachok_flag:
-        display_graphs_kulachok(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle)
+        display_graphs_kulachok(kulachok.kulachok_data, initial_angle=cam_solve_options.initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
 
     if cam_solve_options.graphs_profil_flag:
         display_profil(kulachok.profil_data, initial_angle=cam_solve_options.initial_angle)

@@ -25,7 +25,7 @@ plotSettings_default = PlotSettings(
     mathtext_it = "Times New Roman:italic"
 )
 
-polidainConfig_default = PolidainConfig(
+polidainConfig_default_thin = PolidainConfig(
             N_k = 1000,
             D = 30.0 * 1e-3,
             D_t = 32.0 * 1e-3,
@@ -42,7 +42,23 @@ polidainConfig_default = PolidainConfig(
             k_3 = 20,
             k_4 = 20
 )
-
+polidainConfig_default_flat = PolidainConfig(
+        N_k=1000,
+        D=30.0 * 1e-3,
+        D_t=30.0 * 1e-3,
+        h=2.0 * 1e-3,
+        z=0.25 * 1e-3,
+        f_pod=80.0 / 180 * np.pi,
+        f_v=5.0 / 180 * np.pi,
+        f_op=75.0 / 180 * np.pi,
+        f_z=25 / 180 * np.pi,
+        m=3,
+        d=4,
+        k_1=6,
+        k_2=6,
+        k_3=6,
+        k_4=6
+)
 @dataclass
 class AppConfig:
     cam: PolidainConfig = field(default_factory=lambda: polidainConfig_default)
