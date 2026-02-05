@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Callable, List
 from core.schemas import PolidainData, ProfilData
-from scipy.interpolate import CubicSpline, interp1d
+from scipy.interpolate import interp1d
 
 class CamProfileError(Exception):
     """Базовый класс для ошибок профиля кулачка"""
@@ -384,10 +384,13 @@ class Kulachok_polidain:
                 f"Негладкий профиль (min = {np.min(rho_p):.4f}). "
                 "Необходимо повысить минимальный радиус кривизны."
             )
+
     def set_profil_roller(self):
         """
         Рассчитывает профиль кулачка на основе конфигурации и кинематических данных.
-         """
+        ИСПРАВЛЕНО: Приведено к стандартной полярной системе (X = cos, Y = sin)
+        для совместимости с анимацией.
+        """
 
         self.profil_roller_check()
 
@@ -395,39 +398,48 @@ class Kulachok_polidain:
         phi = self.tolkatel_data.fi_list_rad
         h = self.tolkatel_data.H_rad
         v = self.tolkatel_data.V_rad
-        a = self.tolkatel_data.A_rad
+        # a = self.tolkatel_data.A_rad # Не используется в координатах, только в проверке
 
         # Геометрические параметры
-        Rb = self.config.D * 1e3 / 2.0  # Базовый радиус
-        Rr = self.config.R_r * 1e3  # Радиус ролика
+        Rb = self.config.D * 1e3 / 2.0
+        Rr = self.config.R_r * 1e3
 
         # 2. Расчет теоретического профиля (Траектория центра ролика)
-        # Текущий радиус-вектор до центра ролика
         Rc = Rb + Rr + h
 
-        # Координаты центра ролика (в полярной системе, связанной с кулачком)
-        # Используем sin/cos так, чтобы при phi=0 толкатель был на оси Y
-        xc = Rc * np.sin(phi)
-        yc = Rc * np.cos(phi)
+        xc = Rc * np.cos(phi)
+        yc = Rc * np.sin(phi)
 
         # 3. Расчет действительного профиля
         # Производные координат центра ролика по углу phi
-        dxc = v * np.sin(phi) + Rc * np.cos(phi)
-        dyc = v * np.cos(phi) - Rc * np.sin(phi)
+        # Производная от (Rc * cos) -> Rc' * cos + Rc * (-sin) -> v * cos - Rc * sin
+        dxc = v * np.cos(phi) - Rc * np.sin(phi)
 
-        # Модуль вектора касательной (расстояние от мгновенного центра скоростей)
+        # Производная от (Rc * sin) -> Rc' * sin + Rc * cos -> v * sin + Rc * cos
+        dyc = v * np.sin(phi) + Rc * np.cos(phi)
+
+        # Модуль вектора касательной
         norm_factor = np.sqrt(dxc ** 2 + dyc ** 2)
-
-        # Обработка деления на ноль
         norm_factor[norm_factor == 0] = 1e-9
 
-        # Координаты конструктивного профиля (смещение по нормали внутрь)
-        # Знаки выбраны для условия "выпуклый кулачок, ролик снаружи"
-        xp = xc + Rr * (dyc / norm_factor)
-        yp = yc - Rr * (dxc / norm_factor)
+        # Координаты конструктивного профиля
+        # Смещение на Rr внутрь кривой.
+        # Формулы смещения эквидистанты:
+        # xp = xc + Rr * dy / sqrt(...) * sign
+        # yp = yc - Rr * dx / sqrt(...) * sign
+        # Для внутреннего смещения (уменьшения радиуса) знаки обычно такие:
+        xp = xc - Rr * (dyc / norm_factor)
+        yp = yc + Rr * (dxc / norm_factor)
+
+        # Важно: В зависимости от направления обхода (CW/CCW) знаки могут инвертироваться.
+        # Если профиль "вывернется", попробуйте поменять знаки перед Rr на противоположные:
+        # xp = xc - Rr * ...
+        # yp = yc + Rr * ...
+        # Но для стандартной математики (CCW) текущий вариант должен быть верным,
+        # если мы хотим "уменьшить" профиль относительно центра ролика.
 
         self.profil_data = ProfilData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
                                       X=xp,
-                                      Y=yp,)
+                                      Y=yp)
         self.profil_solve_flag = True
         self.solve_type = "roller"

@@ -48,15 +48,15 @@ if __name__ == '__main__':
                                         graphs_tolkatel_flag = True,
                                         graphs_kulachok_flag = False,
                                         graphs_profil_flag = True,
-                                        display_animation_flag = True,
+                                        display_animation_flag = False,
                                         save_animation_flag = True,
                                         import_dxf_flag = False,
                                         dxf_profil_name = "tolkatel",
                                         calculate_optimal_initial_angle = True,
                                         graphs_argument_type = 'degree',
-                                        kulachok_type = 'roller',
+                                        kulachok_type = 'flat',
                                         N = 100,
                                         profil_and_graphs_together_flag = False,
-                                        animation_profil_and_graphs_together_flag = False,
+                                        animation_profil_and_graphs_together_flag = True,
     )
     calculate(cam_solve_options)
