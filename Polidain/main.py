@@ -1,4 +1,4 @@
-from options.main import CamSolveOptions, calculate_cam_solve
+from options import CamSolveOptions, calculate_cam_solve
 
 if __name__ == '__main__':
     cso = CamSolveOptions(kulachok_type = 'thin',

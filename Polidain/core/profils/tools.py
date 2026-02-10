@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-from core.schemas import set_graph_data, set_profile_data
+from core.cam_geometry.schemas import set_graph_data, set_profile_data
 
 
 def fi_list_dif(fi_array: np.ndarray, f_dif: float) -> np.ndarray:
