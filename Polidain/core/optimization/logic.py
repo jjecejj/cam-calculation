@@ -2,11 +2,11 @@ import numpy as np
 from scipy.optimize import differential_evolution
 from multiprocessing import freeze_support
 
-from core.cam_geometry.cam_geometry_config import KulachokConfig
+from core.cam_geometry._config import KulachokConfig
 from typing import Callable
 
-from core.optimization.optimization_config import DifferentialEvolutionConfig, BoundsConfig, GibridOptimizationConfig, OptimizeConfig
-from core.profiling_methods.polidain.polidain_config import PolidainConfig
+from core.optimization._config import DifferentialEvolutionConfig, BoundsConfig, GibridOptimizationConfig, OptimizeConfig
+from core.profiling_methods.polidain._config import PolidainConfig
 from core.cam_geometry import Kulachok
 from core.profiling_methods.polidain import PolidainCalculator
 from core.profils.tools import ProfileDataExtractor

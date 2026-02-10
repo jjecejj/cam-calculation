@@ -1,6 +1,11 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
+from .logic import (
+    display_graphs_kulachok, display_graphs_tolkatel,
+    display_profil, calculate_optimal_angle, display_dashboard
+)
+
 class PlotterOptions(BaseModel):
     graphs_tolkatel_flag: bool = Field(default=False, description="Показать графики движения толкателя")
     graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")

@@ -1,5 +1,5 @@
 import numpy as np
-from jedi.inference.gradual.typing import Callable
+from typing import Callable
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 def set_graph_data(fun_list: list[Callable], omega: float, N: int = 1000):

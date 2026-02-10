@@ -1,4 +1,4 @@
-from core.profiling_methods.base.base_config import MethodConfig
+from core.profiling_methods.base._config import MethodConfig
 from abc import ABC, abstractmethod
 
 class  BaseCalculator(ABC):
