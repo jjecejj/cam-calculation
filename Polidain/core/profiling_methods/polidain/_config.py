@@ -1,5 +1,5 @@
 from pydantic import Field, model_validator
-from core.profiling_methods.base.base_config import MethodConfig
+from core.profiling_methods.base._config import MethodConfig
 
 class ValidationError(Exception):
     pass

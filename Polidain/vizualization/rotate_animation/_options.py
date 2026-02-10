@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
+from .logic import display_animation, set_rotate_data, display_dashboard_animation
+
 class RotateAnimationOptions(BaseModel):
     # Настройки анимации
     display_animation_flag: bool = Field(default=False, description="Запустить анимацию работы механизма")
