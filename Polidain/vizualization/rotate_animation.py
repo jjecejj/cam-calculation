@@ -7,6 +7,8 @@ from matplotlib.patches import Circle
 import matplotlib.gridspec as gridspec
 from typing import Literal, Union
 
+from core.cam_geometry import Kulachok
+
 
 class RotateProfileData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -38,15 +40,14 @@ class RotateProfileData(BaseModel):
         return self
 
 
-def rotate_profile_data(X, Y, angle):
-    # !!! ИЗМЕНЕНИЕ: -np.pi / 2 поворачивает 0-ю точку вниз (на отрицательную Y)
+def rotate_profile_data(X: float | ndarray, Y: float | ndarray, angle: float):
     angle = -angle - np.pi / 2
     x_new = X * np.cos(angle) - Y * np.sin(angle)
     y_new = X * np.sin(angle) + Y * np.cos(angle)
     return (x_new, y_new)
 
 
-def set_rotate_data(kulachok, tolkatel_type):
+def set_rotate_data(kulachok: Kulachok, tolkatel_type: Literal['flat', 'roller', 'thin']):
     if not (kulachok.kulachok_solve_flag and kulachok.tolkatel_solve_flag and kulachok.profil_solve_flag):
         raise ValueError(f"Не были проведены предварительные вычисления кулачка")
 
@@ -176,12 +177,12 @@ def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bo
     plt.show()
 
 
-def display_dashboard_animation(kulachok, tolkatel_type,
+def display_dashboard_animation(kulachok: Kulachok, tolkatel_type: Literal['flat', 'roller', 'thin'],
                                 interval: int = 50,
                                 save_flag: bool = False,
+                                pause_flag: bool = False,
                                 name_file: str | None = None,
-                                graphs_type: Literal['degree', 'rad', 't'] = 'degree',
-                                pause_flag=False):
+                                graphs_type: Literal['degree', 'rad', 't'] = 'degree'):
     """
     Анимирует приборную панель: слева бегущий курсор по графикам, справа вращение механизма.
     """

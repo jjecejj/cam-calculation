@@ -1,10 +1,16 @@
 import numpy as np
+from numpy import ndarray
 from scipy.optimize import differential_evolution
 from multiprocessing import freeze_support
 from dataclasses import dataclass, field
-from core.cam_geometry import Kulachok_polidain
-from core.schemas import PolidainConfig
+
+from config.kulachok import KulachokConfig
 from typing import Callable
+
+from config.profiling_methods.polidain import PolidainConfig
+from core.cam_geometry import Kulachok
+from core.profiling_methods.polidain import PolidainCalculator
+from core.profils.tools import ProfileDataExtractor
 
 
 @dataclass
@@ -57,7 +63,7 @@ def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, op
     D = optimize_config.D + 2 * z
     h = optimize_config.h - D / 2
     try:
-        config = PolidainConfig(
+        config = KulachokConfig(
             N_k=optimize_config.N_k,
             D=D,
             h=h,
@@ -66,6 +72,8 @@ def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, op
             f_v=f_v,
             f_op=f_op,
             f_z=f_z,
+        )
+        polidain_config = PolidainConfig(
             m=m,
             d=d,
             k_1=k_1,
@@ -73,7 +81,8 @@ def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, op
             k_3=k_3,
             k_4=k_4
         )
-        kulachok = Kulachok_polidain(config)
+        polidain_calculator = PolidainCalculator(polidain_config)
+        kulachok = Kulachok(config, polidain_calculator)
         temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
         return temp
     except:
@@ -109,9 +118,10 @@ def gibrid_optimization(gibrid_optimization_config: GibridOptimizationConfig, op
 if __name__ == '__main__':
     freeze_support()
 
-    from pyzirev_profil import R_func as R_func_pyzirev
+    from core.profils.pyzirev import data, f_dif
+    pde = ProfileDataExtractor(data, f_dif)
     gibrid_optimization(GibridOptimizationConfig(m = [3],
                                                  d = [4, 5, 6, 7, 8]),
                         OptimizeConfig(D = 17.8009 * 2,
                                        h = 30.8018837267781),
-                        R_func_pyzirev)
+                        pde.get_H())

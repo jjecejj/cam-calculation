@@ -1,9 +1,3 @@
-import numpy as np
-from numpy import ndarray
-from scipy.interpolate import CubicSpline
-from core.cam_geometry import fi_list_dif
-
-
 # Таблица X,Y (мм)
 data = [
     (17.8009, 0.0000),
@@ -370,45 +364,3 @@ data = [
 
 # Сдвиг фазы для кулачка (рад)
 f_dif = 1.1423973285781066
-
-# Преобразование в полярные координаты
-X = []
-Y = []
-R = []
-FI = []
-for x, y in data:
-    X.append(x)
-    Y.append(y)
-    r = np.hypot(x, y)
-    if y >= 0:
-        phi = np.atan2(y, x)
-    else:
-        phi = 2 * np.pi + np.atan2(y, x)   # угол в радианах
-    R.append(r)
-    FI.append(phi)
-np.append(R, R[0])            # Дублируем радиус первой точки в конец
-np.append(FI, FI[0] + 2 * np.pi) # Дублируем угол первой точки + полный оборот
-
-FI = fi_list_dif(np.array(FI), f_dif)
-R = np.array(R) / 1000
-
-# Cортируем массивы
-sorted_indices = np.argsort(FI)
-FI = FI[sorted_indices]
-R = R[sorted_indices]
-R[-1] = R[0]
-
-# Интерполяция и производные с помощью CubicSpline
-cs = CubicSpline(FI, R, bc_type='periodic')
-
-# Создаем функции для производных
-R_func = cs                 # Сама функция R(phi)
-dR_func = cs.derivative(1)  # Первая производная R'(phi)
-d2R_func = cs.derivative(2) # Вторая производная R''(phi)
-d3R_func = cs.derivative(3) # Третья производная R'''(phi)
-d4R_func = cs.derivative(4) # Четвёртая производная R''''(phi)
-def X_func(fi: ndarray | float | int):
-    return R_func(fi) * np.cos(fi)
-def Y_func(fi: ndarray | float | int):
-    return R_func(fi) * np.sin(fi)
-

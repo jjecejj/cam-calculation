@@ -1,6 +1,8 @@
 import numpy as np
-from typing import Callable, List
-from core.schemas import PolidainData, ProfilData
+from typing import Callable, List, Literal
+from config.kulachok import KulachokConfig
+from core.profiling_methods.base import BaseCalculator
+from core.schemas import GraphData, ProfileData, set_graph_data, set_profile_data
 from scipy.interpolate import interp1d
 
 class CamProfileError(Exception):
@@ -19,127 +21,20 @@ class SolvePreliminaryCalculations(CamProfileError):
     """Ошибка: Не были проведены необходимые вычисления"""
     pass
 
-def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''
-    Функция радиуса кулачка от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
-    temp = 1
-    for i in range(0, len(C_list)):
-        if k_list[i] - 0 < 0:
-            continue
-        temp += C_list[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** k_list[i])
-    return temp * h_kn_max
-
-
-def v_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция скорости от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
-    temp = 0
-    for i in range(0, len(C_list)):
-        if k_list[i] - 1 < 0:
-            continue
-        temp += k_list[i] * C_list[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 1))
-    # return temp * h_kn_max * (omega / (fi_1 - fi_0))
-    return temp * h_kn_max
-
-
-def a_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция ускорения от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
-    temp = 0
-    for i in range(0, len(C_list)):
-        if k_list[i] - 2 < 0:
-            continue
-        temp += k_list[i] * (k_list[i] - 1) * C_list[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 2))
-    return temp * h_kn_max
-
-
-def d_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция рывка от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
-    temp = 0
-    for i in range(0, len(C_list)):
-        if k_list[i] - 3 < 0:
-            continue
-        temp += k_list[i] * (k_list[i] - 1) * (k_list[i] - 2) * C_list[i] * (
-                ((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 3))
-    return temp * h_kn_max
-
-
-def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция кракена от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
-    temp = 0
-    for i in range(0, len(C_list)):
-        if k_list[i] - 4 < 0:
-            continue
-        temp += k_list[i] * (k_list[i] - 1) * (k_list[i] - 2) * (k_list[i] - 3) * C_list[i] * (
-                ((fi - fi_0) / (fi_1 - fi_0)) ** (k_list[i] - 4))
-    return temp * h_kn_max
-
-def set_polidain_data(fun_list:list, omega:float, N: int = 1000):
-    fi_list = np.linspace(0, 2 * np.pi, N)
-    H = fun_list[0](fi_list) * 1000
-    V = fun_list[1](fi_list) * 1000
-    A = fun_list[2](fi_list) * 1000
-    D = fun_list[3](fi_list) * 1000
-    K = fun_list[4](fi_list) * 1000
-    return PolidainData(H_rad = H, V_rad = V, A_rad = A, D_rad = D, K_rad = K, fi_list_rad = fi_list, omega_rad = omega)
-
-def set_profil_data(fun_list:list, N = 1000):
-    fi_list = np.linspace(0, 2 * np.pi, N)
-    X = fun_list[0](fi_list) * 1000
-    Y = fun_list[1](fi_list) * 1000
-    fi_list = fi_list / np.pi * 180
-    return ProfilData(X = X, Y = Y, fi_list = fi_list)
-
-def fi_list_dif(fi_array: np.ndarray, f_dif: float) -> np.ndarray:
-    """
-    Векторизированный сдвиг фазы
-    """
-    shifted = fi_array - f_dif
-    return np.where(shifted <= 0, shifted + 2 * np.pi, shifted)
-
-class Kulachok_polidain:
-    def __init__(self, config):
+class Kulachok:
+    def __init__(self, config: KulachokConfig, profile_method_calculator: BaseCalculator):
         self.config = config
-        self.kulachok_data = None
-        self.tolkatel_data = None
-        self.profil_data = None
-        self.kulachok_solve_flag = False
-        self.tolkatel_solve_flag = False
-        self.profil_solve_flag = False
-        self.solve_type = None
+        self.profile_method_calculator = profile_method_calculator
+
+        self.kulachok_data: GraphData | None = None
+        self.tolkatel_data: GraphData | None = None
+        self.profile_data: ProfileData | None = None
+
+        self.kulachok_solve_flag: bool = False
+        self.tolkatel_solve_flag: bool = False
+        self.profile_solve_flag: bool = False
+
+        self.solve_type: str = None
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int],
                       const_list: List[float]) -> float | np.ndarray:
@@ -186,14 +81,12 @@ class Kulachok_polidain:
         # --- Вычисления для каждого участка ---
         # Участок 1
         if np.any(mask1):
-            val = fun(fi_arr[mask1], self.config.C_list_1, self.config.k_list_1,
-                      p1, fi_0=0, h_kn_max=self.config.z)
+            val = fun(fi_arr[mask1], p1, fi_0 = 0, h_kn_max = self.config.z, segment_number = 1)
             result[mask1] = sign_list[0] * val + const_list[0]
 
         # Участок 2
         if np.any(mask2):
-            val = fun(fi_arr[mask2], self.config.C_list_2, self.config.k_list_2,
-                      p2, fi_0=p1, h_kn_max=self.config.h)
+            val = fun(fi_arr[mask2], p2, fi_0=p1, h_kn_max=self.config.h, segment_number = 2)
             result[mask2] = sign_list[1] * val + const_list[1]
 
         # Участок 3 (Выдержка - просто константа)
@@ -204,15 +97,13 @@ class Kulachok_polidain:
         if np.any(mask4):
             # Аргумент: phi_4 - fi + phi_3
             args = p4 - fi_arr[mask4] + p3
-            val = fun(args, self.config.C_list_3, self.config.k_list_3,
-                      p4, fi_0=p3, h_kn_max=self.config.h)
+            val = fun(args, p4, fi_0=p3, h_kn_max=self.config.h, segment_number = 3)
             result[mask4] = sign_list[2] * val + const_list[3]
 
         # Участок 5 (Спуск с инверсией)
         if np.any(mask5):
             args = p5 - fi_arr[mask5] + p4
-            val = fun(args, self.config.C_list_4, self.config.k_list_4,
-                      p5, fi_0=p4, h_kn_max=self.config.z)
+            val = fun(args, p5, fi_0=p4, h_kn_max=self.config.z, segment_number = 4)
             result[mask5] = sign_list[3] * val + const_list[4]
 
         # Остаток
@@ -224,8 +115,8 @@ class Kulachok_polidain:
             return result.item()
         return result
 
-    def fun_h(self, fi):
-        return self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
+    def fun_h(self, fi: float | np.ndarray):
+        return self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
                                                                 self.config.r0 + self.config.h,
                                                                 self.config.r0 + self.config.h,
                                                                 self.config.r0 + self.config.h,
@@ -234,95 +125,92 @@ class Kulachok_polidain:
 
     def fun_h_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return (self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
+            return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0 + self.config.h,
                                                                      self.config.r0,
-                                                                     self.config.r0 - self.config.z]) - self.config.r0) * np.int64(
-                fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return (self.fun_universal(fi, h_phi, [-1, -1, -1, -1], [self.config.r0,
+                                                                     self.config.r0 - self.config.z]) - self.config.r0) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
+        return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
                                                                  self.config.r0 + self.config.h,
                                                                  self.config.r0 + self.config.h,
                                                                  self.config.r0 + self.config.h,
                                                                  self.config.r0,
-                                                                 self.config.r0 - self.config.z]) - self.config.r0) * int(
-            fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
+                                                                 self.config.r0 - self.config.z]) - self.config.r0) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
 
-    def fun_v(self, fi):
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
+    def fun_v(self, fi: float | np.ndarray):
+        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
 
-    def fun_v_2(self, fi):
+    def fun_v_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
-    def fun_a(self, fi):
-        return self.fun_universal(fi, a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
+    def fun_a(self, fi: float | np.ndarray):
+        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
 
-    def fun_a_2(self, fi):
+    def fun_a_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
-    def fun_d(self, fi):
-        return self.fun_universal(fi, d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
+    def fun_d(self, fi: float | np.ndarray):
+        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
 
-    def fun_d_2(self, fi):
+    def fun_d_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
-    def fun_k(self, fi):
-        return self.fun_universal(fi, k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
+    def fun_k(self, fi: float | np.ndarray):
+        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
 
-    def fun_k_2(self, fi):
+    def fun_k_2(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
-    def fun_x(self, fi):
+    def fun_x(self, fi: float | np.ndarray):
         return self.fun_h(fi) * np.cos(fi)
 
-    def fun_y(self, fi):
+    def fun_y(self, fi: float | np.ndarray):
         return self.fun_h(fi) * np.sin(fi)
 
-    def set_kulachok_data(self, N = 1000):
-        self.kulachok_data = set_polidain_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega, N = N)
+    def set_kulachok_data(self, N: int = 1000):
+        self.kulachok_data = set_graph_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega, N = N)
         self.kulachok_solve_flag = True
 
-    def set_tolkatel_data(self, N = 1000):
-        self.tolkatel_data = set_polidain_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], self.config.omega, N = N)
+    def set_tolkatel_data(self, N: int = 1000):
+        self.tolkatel_data = set_graph_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], self.config.omega, N = N)
         self.tolkatel_solve_flag = True
 
-    def set_profil_data(self, N = 1000):
-        self.profil_data = set_profil_data([self.fun_x, self.fun_y], N = N)
-        self.profil_solve_flag = True
+    def set_profile_data(self, N: int = 1000):
+        self.profile_data = set_profile_data([self.fun_x, self.fun_y], N = N)
+        self.profile_solve_flag = True
         self.solve_type = "thin"
 
-    def solve(self, N = 1000, kulachok_type = None):
+    def solve(self, kulachok_type: Literal['thin', 'flat', 'roller'] = 'thin', N: int = 1000):
         self.set_tolkatel_data(N = N)
         self.set_kulachok_data(N = N)
         if kulachok_type == 'thin':
-            self.set_profil_data(N = N)
+            self.set_profile_data(N = N)
         elif kulachok_type == 'flat':
-            self.set_profil_flat()
-        elif kulachok_type == 'roller':
-            self.set_profil_roller()
+            self.set_profile_flat()
         else:
-            raise ValueError('kulachok_type must be either "flat" or "thin" or "roller"')
+            self.set_profile_roller()
 
-    def profil_flat_check(self, curvature_flag = True):
+    def profile_flat_check(self, curvature_flag: bool = True):
         if not(self.kulachok_solve_flag and self.tolkatel_solve_flag):
             raise SolvePreliminaryCalculations(f"Не были проведены предварительные вычисления закона движения толкатиля")
+
         max_v = np.max(self.tolkatel_data.V_t / self.config.omega)
         if self.config.D_t * 1e3 / 2 <= max_v:
             raise PusherDiameterError(
@@ -337,9 +225,9 @@ class Kulachok_polidain:
                 "Необходимо повысить минимальный радиус кривизны."
             )
 
-    def set_profil_flat(self):
+    def set_profile_flat(self):
         # Проверка возможности построения профиля для заданного закона движения толкателя
-        self.profil_flat_check()
+        self.profile_flat_check()
 
         # Расчёт угла откланения и эксцентроситета
         E = self.tolkatel_data.V_t / self.tolkatel_data.omega_rad
@@ -362,11 +250,11 @@ class Kulachok_polidain:
 
         # Интерполяция
         R_func = interp1d(fi_list_kulachok, R, kind="linear")
-        self.profil_data = ProfilData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
-        self.profil_solve_flag = True
+        self.profile_data = ProfileData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
+        self.profile_solve_flag = True
         self.solve_type = "flat"
 
-    def profil_roller_check(self):
+    def profile_roller_check(self):
         h = self.tolkatel_data.H_rad
         v = self.tolkatel_data.V_rad
         a = self.tolkatel_data.A_rad
@@ -385,14 +273,14 @@ class Kulachok_polidain:
                 "Необходимо повысить минимальный радиус кривизны."
             )
 
-    def set_profil_roller(self):
+    def set_profile_roller(self):
         """
         Рассчитывает профиль кулачка на основе конфигурации и кинематических данных.
         ИСПРАВЛЕНО: Приведено к стандартной полярной системе (X = cos, Y = sin)
         для совместимости с анимацией.
         """
 
-        self.profil_roller_check()
+        self.profile_roller_check()
 
         # 1. Извлечение данных
         phi = self.tolkatel_data.fi_list_rad
@@ -438,8 +326,8 @@ class Kulachok_polidain:
         # Но для стандартной математики (CCW) текущий вариант должен быть верным,
         # если мы хотим "уменьшить" профиль относительно центра ролика.
 
-        self.profil_data = ProfilData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
-                                      X=xp,
-                                      Y=yp)
-        self.profil_solve_flag = True
+        self.profile_data = ProfileData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
+                                       X=xp,
+                                       Y=yp)
+        self.profile_solve_flag = True
         self.solve_type = "roller"

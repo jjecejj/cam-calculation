@@ -1,8 +1,11 @@
+from typing import Literal
 from pydantic import BaseModel, model_validator
 import ezdxf
 
+from core.schemas import ProfileData
 
-class ProfilConfig(BaseModel):
+
+class ProfileExportData(BaseModel):
     """
     Модель данных для конфигурации и валидации профиля кулачка перед экспортом.
 
@@ -48,25 +51,26 @@ class ProfilConfig(BaseModel):
         return [(self.X[i], self.Y[i]) for i in range(0, self.N)]
 
 
-def build_profile(profil_data, profil_name: str = "kulachok", line_type: str = "spline"):
+def build_profile(profile_data: ProfileData, profile_name: str = "kulachok", line_type: str = "spline"):
     """
+
     Фасадная функция (обертка) для запуска процесса генерации DXF.
 
     Извлекает сырые данные из объекта профиля, упаковывает их в валидируемую
     конфигурацию ProfilConfig и вызывает функцию создания файла.
 
     Args:
-        profil_data: Объект, содержащий атрибуты X и Y (массивы координат).
-        profil_name (str, optional): Имя выходного файла (без расширения).
+        profile_data: Объект, содержащий атрибуты X и Y (массивы координат).
+        profile_name (str, optional): Имя выходного файла (без расширения).
             По умолчанию "kulachok".
         line_type (str, optional): Тип линии ("spline" или "line").
             По умолчанию "spline".
     """
-    config = ProfilConfig(X=profil_data.X, Y=profil_data.Y)
-    create_profil(config, profil_name=profil_name, line_type=line_type)
+    config = ProfileExportData(X=profile_data.X, Y=profile_data.Y)
+    create_profil(config, profil_name=profile_name, line_type=line_type)
 
 
-def create_profil(config: ProfilConfig, profil_name: str = "kulachok", line_type: str = "spline"):
+def create_profil(profile_export_data: ProfileExportData, profil_name: str = "kulachok", line_type: Literal['line', "spline"] = "spline"):
     """
     Генерирует и сохраняет DXF-файл с профилем кулачка.
 
@@ -74,7 +78,7 @@ def create_profil(config: ProfilConfig, profil_name: str = "kulachok", line_type
     Сохраняет файл по пути: 'data/output/DXF_profils/<profil_name>.dxf'.
 
     Args:
-        config (ProfilConfig): Валидированный объект конфигурации с координатами.
+        profile_export_data (ProfileExportData): Валидированный объект конфигурации с координатами.
         profil_name (str, optional): Имя файла. По умолчанию "kulachok".
         line_type (str, optional): Метод отрисовки профиля.
             - "line": Соединяет точки прямыми отрезками.
@@ -89,14 +93,14 @@ def create_profil(config: ProfilConfig, profil_name: str = "kulachok", line_type
     msp = doc.modelspace()
 
     if line_type == "line":
-        for i in range(1, config.N):
+        for i in range(1, profile_export_data.N):
             # print(config.X[i - 1], config.Y[i - 1]) # Отладка
             msp.add_line(
-                start=(config.X[i - 1], config.Y[i - 1]),
-                end=(config.X[i], config.Y[i])
+                start=(profile_export_data.X[i - 1], profile_export_data.Y[i - 1]),
+                end=(profile_export_data.X[i], profile_export_data.Y[i])
             )
     elif line_type == "spline":
-        msp.add_spline(fit_points=config.fit_points)
+        msp.add_spline(fit_points=profile_export_data.fit_points)
 
     # Сохранение файла
     # Лучше использовать os.path.join, но оставляем как в оригинале для совместимости

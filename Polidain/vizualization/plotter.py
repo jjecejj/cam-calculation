@@ -2,9 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from typing import Literal, Union
-from core.schemas import ProfilData, PolidainData
 
-def set_config(config):
+from numpy import ndarray
+
+from config.vizualization.plotter import PlotConfig
+from core.cam_geometry import Kulachok
+from core.schemas import ProfileData, GraphData
+
+def set_config(config: PlotConfig):
     """
     Применяет настройки конфигурации к глобальным параметрам matplotlib.
     """
@@ -18,7 +23,7 @@ def set_config(config):
     plt.rcParams['mathtext.it'] = config.mathtext_it
 
 
-def _plot_component(ax, x, y, ylabel:str, xlabel:str):
+def _plot_component(ax, x: list | ndarray, y: list | ndarray, ylabel: str, xlabel: str):
     """
     Универсальная вспомогательная функция для построения графика с экстремумами.
     """
@@ -64,11 +69,11 @@ def set_initial_angle(_fi_list: list | np.ndarray, initial_angle: float | int = 
     else:
         return set_initial_angle_t(_fi_list, initial_angle = initial_angle)
 
-def calculate_optimal_angle(kulachok):
+def calculate_optimal_angle(kulachok: Kulachok):
     return np.degrees(-(2 * np.pi - kulachok.config.phi_5) / 2)
 
 
-def display_graphs_kulachok(data:PolidainData, initial_angle: float | int = 0,
+def display_graphs_kulachok(data: GraphData, initial_angle: float | int = 0,
                             graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     fig, axs = plt.subplots(5, 1, figsize=(8, 20))
     fig.suptitle("Графики для кулачка", fontsize=16)
@@ -109,7 +114,7 @@ def display_graphs_kulachok(data:PolidainData, initial_angle: float | int = 0,
     plt.show()
 
 
-def display_graphs_tolkatel(data:PolidainData, initial_angle: float | int = 0,
+def display_graphs_tolkatel(data: GraphData, initial_angle: float | int = 0,
                             graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     fig, axs = plt.subplots(5, 1, figsize=(8, 20))
     fig.suptitle("Графики для толкателя", fontsize=16)
@@ -149,7 +154,7 @@ def display_graphs_tolkatel(data:PolidainData, initial_angle: float | int = 0,
     plt.tight_layout()
     plt.show()
 
-def display_profil(data:ProfilData, initial_angle: float | int = 0):
+def display_profil(data: ProfileData, initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
     i_list = set_initial_angle(data.fi_list, initial_angle=initial_angle)
     X = np.asarray(data.X)
@@ -169,7 +174,7 @@ def display_profil(data:ProfilData, initial_angle: float | int = 0):
     plt.show()
 
 
-def display_all(kulachok, initial_angle: Union[float, int, str] = 0):
+def display_all(kulachok: Kulachok, initial_angle: Union[float, int, str] = 0, graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     if initial_angle == "auto":
         target_angle = calculate_optimal_angle(kulachok)
     elif isinstance(initial_angle, (int, float)):
@@ -177,11 +182,11 @@ def display_all(kulachok, initial_angle: Union[float, int, str] = 0):
     else:
         raise ValueError("initial_angle должен быть числом или 'auto'")
 
-    display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle)
-    display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle)
+    display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle, graphs_type=graphs_type)
+    display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle, graphs_type=graphs_type)
     display_profil(kulachok.profil_data, initial_angle=target_angle)
 
-def display_dashboard(kulachok,
+def display_dashboard(kulachok: Kulachok,
                       initial_angle: Union[float, int, str] = 0,
                       graphs_type: Literal['t', 'rad', 'degree'] = 'degree',
                       target: Literal['tolkatel', 'kulachok'] = 'tolkatel'):
@@ -291,7 +296,7 @@ def display_dashboard(kulachok,
     plt.tight_layout()
     plt.show()
 
-def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
+def display_graphs_compression(data_1: GraphData, data_2: GraphData, initial_angle: float | int = 0):
     if data_1.fi_list.shape[0] != data_2.fi_list.shape[0]:
         raise ValueError("Оба кулачка должны иметь одинаковую размерность массивов")
 
@@ -319,7 +324,7 @@ def display_graphs_comprasion(data_1, data_2, initial_angle: float | int = 0):
     plt.tight_layout()
     plt.show()
 
-def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
+def display_profile_compression(data_1: ProfileData, data_2: ProfileData, initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
 
     i_list = set_initial_angle(data_1.fi_list, initial_angle=initial_angle)
@@ -345,7 +350,7 @@ def display_profil_comprasion(data_1, data_2, initial_angle: float | int = 0):
     plt.legend()
     plt.show()
 
-def display_all_comprasion(kulachok, data_polidain, data_profil, initial_angle: Union[float, int, str] = 0):
+def display_all_compression(kulachok: Kulachok, data_graph: GraphData, data_profile: ProfileData, initial_angle: Union[float, int, str] = 0):
     if initial_angle == "auto":
         target_angle = calculate_optimal_angle(kulachok)
     elif isinstance(initial_angle, (int, float)):
@@ -353,5 +358,5 @@ def display_all_comprasion(kulachok, data_polidain, data_profil, initial_angle: 
     else:
         raise ValueError("initial_angle должен быть числом или 'auto'")
 
-    display_graphs_comprasion(kulachok.kulachok_data, data_polidain,  initial_angle=target_angle)
-    display_profil_comprasion(kulachok.profil_data, data_profil, initial_angle=target_angle)
+    display_graphs_compression(kulachok.kulachok_data, data_graph, initial_angle=target_angle)
+    display_profile_compression(kulachok.profil_data, data_profile, initial_angle=target_angle)
