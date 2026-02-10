@@ -5,7 +5,7 @@ from typing import Literal, Union
 
 from numpy import ndarray
 
-from vizualization.plotter._config import PlotConfig
+from vizualization.plotter.config import PlotConfig
 from core.cam_geometry import Kulachok
 from core.cam_geometry.schemas import ProfileData, GraphData
 

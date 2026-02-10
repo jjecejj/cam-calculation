@@ -2,9 +2,9 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from multiprocessing import freeze_support
 
-from core.cam_geometry._config import default_kulachok_config
-from core.profiling_methods.polidain._config import default_polidain_config
-from vizualization.plotter._config import plotConfig_default, PlotConfig
+from core.cam_geometry.config import default_kulachok_config
+from core.profiling_methods.polidain.config import default_polidain_config
+from vizualization.plotter.config import plotConfig_default, PlotConfig
 from core.cam_geometry import Kulachok
 
 

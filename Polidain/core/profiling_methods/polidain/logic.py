@@ -1,4 +1,4 @@
-from core.profiling_methods.polidain._config import PolidainConfig
+from core.profiling_methods.polidain.config import PolidainConfig
 from core.profiling_methods.base import BaseCalculator
 
 

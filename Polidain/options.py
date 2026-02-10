@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal, Callable, Union
 
-from core.cam_geometry._config import KulachokConfig, default_kulachok_config
-from core.profiling_methods.base._config import MethodConfig
-from core.profiling_methods.polidain._config import default_polidain_config, PolidainConfig
+from core.cam_geometry.config import KulachokConfig, default_kulachok_config
+from core.profiling_methods.base.config import MethodConfig
+from core.profiling_methods.polidain.config import default_polidain_config, PolidainConfig
 from core.cam_geometry import Kulachok
 from core.profiling_methods.base import BaseCalculator
 from core.optimization import (
@@ -11,12 +11,12 @@ from core.optimization import (
     GibridOptimizationConfig, gibrid_optimization
 )
 from core.profiling_methods.polidain import PolidainCalculator
-from vizualization.plotter._options import (
+from vizualization.plotter.options import (
     display_graphs_kulachok, display_graphs_tolkatel,
     display_profil, calculate_optimal_angle, display_dashboard
 )
-from vizualization.rotate_animation._options import display_animation, set_rotate_data, display_dashboard_animation
-from exporters.dxf_creator._options import build_profile
+from vizualization.rotate_animation.options import display_animation, set_rotate_data, display_dashboard_animation
+from exporters.dxf_creator.options import build_profile
 
 
 class CamSolveOptions(BaseModel):

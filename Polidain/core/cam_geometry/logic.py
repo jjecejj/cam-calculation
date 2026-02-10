@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Callable, List, Literal
-from core.cam_geometry._config import KulachokConfig
+from core.cam_geometry.config import KulachokConfig
 from core.profiling_methods.base import BaseCalculator
 from core.cam_geometry.schemas import GraphData, ProfileData, set_graph_data, set_profile_data
 from scipy.interpolate import interp1d
