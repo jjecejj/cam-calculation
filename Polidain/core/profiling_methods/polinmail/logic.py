@@ -1,88 +1,98 @@
+import numpy as np
+
 from core.profiling_methods.polinmail.config import PolinmailConfig
 from core.profiling_methods.base.logic import BaseCalculator
 from typing import List
 
-def get_powers(n: int) -> List[int]:
-    """
-    Возвращает список степеней для полинома из n членов.
-    n=4: 3-я степень (члены x^2, x^3) - аналог S=3x^2 - 2x^3 (Cubic)
-    n=5: 4-я степень (члены x^3, x^4) - аналог S=4x^3 - 3x^4 (Quartic)
-    n=6: 5-я степень (члены x^3, x^4, x^5) - аналог S=10x^3 - 15x^4 + 6x^5 (Quintic 3-4-5)
-    """
-    if n == 4:
-        return [2, 3]
-    elif n == 5:
-        return [3, 4]
-    elif n == 6:
-        return [3, 4, 5]
-    return []
+def get_matrix_coefficients(m_list: List | np.ndarray) -> np.ndarray:
+    m_list = np.asarray(m_list)
+    A = [np.array([1 for i in range(0, len(m_list))])]
+    for i in range(0, len(m_list) - 1):
+        A.append(A[-1] * (m_list - i))
+    return np.array(A)
 
-def calculate_coefficients(powers: List[int]) -> List[float]:
-    """
-    Вычисляет коэффициенты C_i для полинома, удовлетворяющего условиям S(1)=1, и производным=0.
-    Использует обобщенную формулу для системы Вандермонда производных.
-    C_i = (-1)^(N-1) * product(p_j for j!=i) / product(p_i - p_j for j!=i)
-    """
-    coeffs = []
-    num_terms = len(powers)
-    sign_factor = (-1) ** (num_terms - 1)
-
-    for i, p_i in enumerate(powers):
-        numerator = 1.0
-        denominator = 1.0
-        for j, p_j in enumerate(powers):
-            if i == j:
-                continue
-            numerator *= p_j
-            denominator *= (p_i - p_j)
-        coeffs.append(sign_factor * numerator / denominator)
+def calculate_poly_coefficients(m_list, boundary_conditions):
+    A = get_matrix_coefficients(m_list)
+    B = boundary_conditions
+    coeffs = np.linalg.solve(A, B)
     return coeffs
 
-def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    """Функция радиуса кулачка"""
-    temp = 0
-    normalized_fi = (fi - fi_0) / (fi_1 - fi_0)
-    for i in range(len(C_list)):
-        if k_list[i] < 0: continue
-        temp += C_list[i] * (normalized_fi ** k_list[i])
+def h_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
+    temp = 1
+    for i in range(0, len(coeffs)):
+        if m_list[i] - 0 < 0:
+            continue
+        temp += coeffs[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** m_list[i])
     return temp * h_kn_max
 
-def v_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    """Функция скорости"""
+def v_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
+    '''Функция скорости от угла поворота кулачка
+    :param fi: Угол поворота кулачка
+    :param m_list: Массив степеней членов полинома
+    :param coeffs: Массив коэффициентов при членах полинома
+    :param fi_1: Конец характерного участка
+    :param fi_0: Начало характерного участка
+    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
+    '''
     temp = 0
-    normalized_fi = (fi - fi_0) / (fi_1 - fi_0)
-    for i in range(len(C_list)):
-        if k_list[i] < 1: continue
-        temp += k_list[i] * C_list[i] * (normalized_fi ** (k_list[i] - 1))
-    return temp * h_kn_max / (fi_1 - fi_0)
+    for i in range(0, len(coeffs)):
+        if m_list[i] - 1 < 0:
+            continue
+        temp += m_list[i] * coeffs[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** (m_list[i] - 1)) / (fi_1 - fi_0)
+    return temp * h_kn_max
 
-def a_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    """Функция ускорения"""
+
+def a_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
+    '''Функция ускорения от угла поворота кулачка
+    :param fi: Угол поворота кулачка
+    :param m_list: Массив степеней членов полинома
+    :param coeffs: Массив коэффициентов при членах полинома
+    :param fi_1: Конец характерного участка
+    :param fi_0: Начало характерного участка
+    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
+    '''
     temp = 0
-    normalized_fi = (fi - fi_0) / (fi_1 - fi_0)
-    for i in range(len(C_list)):
-        if k_list[i] < 2: continue
-        temp += k_list[i] * (k_list[i] - 1) * C_list[i] * (normalized_fi ** (k_list[i] - 2))
-    return temp * h_kn_max / ((fi_1 - fi_0)**2)
+    for i in range(0, len(coeffs)):
+        if m_list[i] - 2 < 0:
+            continue
+        temp += m_list[i] * (m_list[i] - 1) * coeffs[i] * (((fi - fi_0) / (fi_1 - fi_0)) ** (m_list[i] - 2)) / ((fi_1 - fi_0)**2)
+    return temp * h_kn_max
 
-def d_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    """Функция рывка (jerk)"""
+
+def d_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
+    '''Функция рывка от угла поворота кулачка
+    :param fi: Угол поворота кулачка
+    :param m_list: Массив степеней членов полинома
+    :param coeffs: Массив коэффициентов при членах полинома
+    :param fi_1: Конец характерного участка
+    :param fi_0: Начало характерного участка
+    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
+    '''
     temp = 0
-    normalized_fi = (fi - fi_0) / (fi_1 - fi_0)
-    for i in range(len(C_list)):
-        if k_list[i] < 3: continue
-        temp += k_list[i] * (k_list[i] - 1) * (k_list[i] - 2) * C_list[i] * (normalized_fi ** (k_list[i] - 3))
-    return temp * h_kn_max / ((fi_1 - fi_0)**3)
+    for i in range(0, len(coeffs)):
+        if m_list[i] - 3 < 0:
+            continue
+        temp += m_list[i] * (m_list[i] - 1) * (m_list[i] - 2) * coeffs[i] * (
+                ((fi - fi_0) / (fi_1 - fi_0)) ** (m_list[i] - 3)) / ((fi_1 - fi_0)**3)
+    return temp * h_kn_max
 
-def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    """Функция пинга (ping)"""
+
+def k_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
+    '''Функция кракена от угла поворота кулачка
+    :param fi: Угол поворота кулачка
+    :param m_list: Массив степеней членов полинома
+    :param coeffs: Массив коэффициентов при членах полинома
+    :param fi_1: Конец характерного участка
+    :param fi_0: Начало характерного участка
+    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
+    '''
     temp = 0
-    normalized_fi = (fi - fi_0) / (fi_1 - fi_0)
-    for i in range(len(C_list)):
-        if k_list[i] < 4: continue
-        temp += k_list[i] * (k_list[i] - 1) * (k_list[i] - 2) * (k_list[i] - 3) * C_list[i] * (normalized_fi ** (k_list[i] - 4))
-    return temp * h_kn_max / ((fi_1 - fi_0)**4)
-
+    for i in range(0, len(coeffs)):
+        if m_list[i] - 4 < 0:
+            continue
+        temp += m_list[i] * (m_list[i] - 1) * (m_list[i] - 2) * (m_list[i] - 3) * coeffs[i] * (
+                ((fi - fi_0) / (fi_1 - fi_0)) ** (m_list[i] - 4)) / ((fi_1 - fi_0)**4)
+    return temp * h_kn_max
 
 class PolinmailCalculator(BaseCalculator):
     def __init__(self, config: PolinmailConfig):
@@ -93,7 +103,7 @@ class PolinmailCalculator(BaseCalculator):
         self.c_list: List[float] = calculate_coefficients(self.k_list)
 
     def h_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return h_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)
+        return h_phi(fi, self.m_list, self.coeffs, fi_1, fi_0, h_kn_max)
 
     def v_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
         return v_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)

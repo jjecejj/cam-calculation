@@ -1,27 +1,46 @@
-from pydantic import Field
+from typing import List
+
+from pydantic import Field, model_validator, BaseModel
+from pytz.reference import Local
+
 from core.profiling_methods.base.config import MethodConfig
 
-class PolinmailConfig(MethodConfig):
-    """
-    Класс-валидатор входных данных для полинома 4-6 членов
-    Передаваемые данные:
-        'n': Количество членов полинома (4, 5 или 6)
-        'k_1': Коэффициент агрессивности (для совместимости, не используется)
-        'k_2': ...
-        'k_3': ...
-        'k_4': ...
-    """
-    n: int = Field(..., ge=4, le=6, description="Количество членов полинома (4, 5 или 6)")
+class ValidationError(Exception):
+    pass
 
-    k_1: int = Field(6, gt=0, description="Коэффициент агрессивности первого участка")
-    k_2: int = Field(6, gt=0, description="Коэффициент агрессивности второго участка")
-    k_3: int = Field(6, gt=0, description="Коэффициент агрессивности третьего участка")
-    k_4: int = Field(6, gt=0, description="Коэффициент агрессивности четвертого участка")
+class LocalPolinmailConfig(BaseModel):
+    m: int = Field(..., ge=1, description="Степень при первом члене")
+    d: int = Field(..., ge=1, description="Разность степеней, не меньше 1")
+    boundary_conditions: List[float] = Field(default=[1, 0, 0, 0, 0], description="Граничные условия")
+
+    @property
+    def m_list(self) -> List[int]:
+        '''Список степеней членов полинома'''
+        return [self.m + self.d * i for i in range(0, len(self.boundary_conditions))]
+
+    @model_validator(mode='after')
+    def check_boundary_conditions(self):
+        m_list = self.m_list
+        for i in range(len(self.boundary_conditions)):
+            if (self.boundary_conditions[i] == 0) and (i in m_list):
+                raise ValidationError("Значение m не соответствует граничным условиям")
+        return self
+
+class PolinmailConfig(MethodConfig):
+    config_1: LocalPolinmailConfig
+    config_2: LocalPolinmailConfig
+    config_3: LocalPolinmailConfig
+    config_4: LocalPolinmailConfig
+
+default_local_polinmail_config = LocalPolinmailConfig(
+    m = 5,
+    d = 1,
+    boundary_conditions = [1, 0, 0, 0, 0]
+)
 
 default_polinmail_config = PolinmailConfig(
-    n=6,
-    k_1=6,
-    k_2=6,
-    k_3=6,
-    k_4=6
+    config_1 = default_local_polinmail_config,
+    config_2 = default_local_polinmail_config,
+    config_3 = default_local_polinmail_config,
+    config_4 = default_local_polinmail_config,
 )
