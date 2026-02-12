@@ -15,6 +15,13 @@ from core.optimization import (
 from core.profiling_methods.polidain import PolidainCalculator
 from core.profiling_methods.polinmail.config import default_polinmail_config
 from vizualization.plotter.options import PlotterOptions
+from vizualization.plotter.logic import (
+    calculate_optimal_angle,
+    display_dashboard,
+    display_graphs_tolkatel,
+    display_graphs_kulachok,
+    display_profil
+)
 from vizualization.rotate_animation.options import display_animation, set_rotate_data, display_dashboard_animation, \
     RotateAnimationOptions
 from exporters.dxf_creator.options import build_profile, DxfCreatorOptions
@@ -36,57 +43,61 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
     Выполняет расчет геометрии кулачка и запускает выбранные методы вывода (графики, анимация, DXF).
     """
     # 1. Инициализация и расчет
-    kulachok = Kulachok(cam_solve_options.cam_config, cam_solve_options.calculator)
-    kulachok.solve(kulachok_type=cam_solve_options.kulachok_type, N=cam_solve_options.N)
+    cam_options = cam_solve_options.cam_geometry_options
+    kulachok = Kulachok(cam_options.cam_config, cam_options.calculator)
+    kulachok.solve(kulachok_type=cam_options.kulachok_type, N=cam_options.N)
 
     # 2. Определение начального угла
-    if cam_solve_options.calculate_optimal_initial_angle:
+    if cam_options.calculate_optimal_initial_angle:
         initial_angle = calculate_optimal_angle(kulachok)
     else:
-        initial_angle = cam_solve_options.initial_angle
+        initial_angle = cam_options.initial_angle
 
     # 3. Отрисовка графиков
-    if cam_solve_options.profile_and_graphs_together_flag:
-        if cam_solve_options.graphs_kulachok_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type, target='kulachok')
+    plotter_options = cam_solve_options.plotter_options
+    if plotter_options.profile_and_graphs_together_flag:
+        if plotter_options.graphs_kulachok_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=plotter_options.graphs_argument_type, target='kulachok')
 
-        if cam_solve_options.graphs_tolkatel_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=cam_solve_options.graphs_argument_type,  target='tolkatel')
+        if plotter_options.graphs_tolkatel_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=plotter_options.graphs_argument_type,  target='tolkatel')
 
     else:
-        if cam_solve_options.graphs_tolkatel_flag:
-            display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+        if plotter_options.graphs_tolkatel_flag:
+            display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=initial_angle, graphs_type=plotter_options.graphs_argument_type)
 
-        if cam_solve_options.graphs_kulachok_flag:
-            display_graphs_kulachok(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
+        if plotter_options.graphs_kulachok_flag:
+            display_graphs_kulachok(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type=plotter_options.graphs_argument_type)
 
-        if cam_solve_options.graphs_profile_flag:
+        if plotter_options.graphs_profile_flag:
             display_profil(kulachok.profile_data, initial_angle=initial_angle)
 
     # 4. Анимация
-    if cam_solve_options.display_animation_flag:
+    anim_options = cam_solve_options.rotate_animation_options
+    if anim_options.display_animation_flag:
         rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.tolkatel_solve_type)
         display_animation(
             rotate_data,
-            interval=cam_solve_options.animation_intarval,
-            save_flag=cam_solve_options.save_animation_flag,
-            name_file=cam_solve_options.profile_animation_name_file,
-            pause_flag=cam_solve_options.animation_pause_flag,
+            interval=anim_options.animation_intarval,
+            save_flag=anim_options.save_animation_flag,
+            name_file=anim_options.profile_animation_name_file,
+            pause_flag=anim_options.animation_pause_flag,
         )
-    if cam_solve_options.animation_profile_and_graphs_together_flag:
+    if anim_options.animation_profile_and_graphs_together_flag:
         display_dashboard_animation(kulachok, tolkatel_type=kulachok.tolkatel_solve_type,
-                                    interval=cam_solve_options.animation_intarval,
-                                    save_flag=cam_solve_options.save_animation_flag,
-                                    name_file=cam_solve_options.dashboard_animation_name_file,
-                                    graphs_type=cam_solve_options.animation_graphs_argument_type,
-                                    pause_flag=cam_solve_options.animation_pause_flag, )
+                                    interval=anim_options.animation_intarval,
+                                    save_flag=anim_options.save_animation_flag,
+                                    name_file=anim_options.dashboard_animation_name_file,
+                                    graphs_type=anim_options.animation_graphs_argument_type,
+                                    pause_flag=anim_options.animation_pause_flag, )
 
     # 5. Экспорт в DXF
-    if cam_solve_options.import_dxf_flag:
+    dxf_options = cam_solve_options.dxf_creator_options
+    if dxf_options.import_dxf_flag:
         build_profile(
             kulachok.profile_data,
-            profile_name=cam_solve_options.dxf_profile_name,
-            line_type=cam_solve_options.dxf_line_type
+            profile_name=dxf_options.dxf_profile_name,
+            line_type=dxf_options.dxf_line_type
         )
 
 def calculate(cam_options: Union[CamSolveOptions, CamOptimizationOptions]):
