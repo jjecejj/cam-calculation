@@ -98,21 +98,57 @@ class PolinmailCalculator(BaseCalculator):
     def __init__(self, config: PolinmailConfig):
         BaseCalculator.__init__(self, config)
 
-        # Calculate powers and coefficients once based on configuration
-        self.k_list: List[int] = get_powers(self.config.n)
-        self.c_list: List[float] = calculate_coefficients(self.k_list)
+        # Инициализация конфигураций
+        self.config_1 = self.config.config_1
+        self.config_2 = self.config.config_2
+        self.config_3 = self.config.config_3
+        self.config_4 = self.config.config_4
+
+        self.m_list_1 = self.config_1.m_list
+        self.m_list_2 = self.config_2.m_list
+        self.m_list_3 = self.config_3.m_list
+        self.m_list_4 = self.config_4.m_list
+
+        self.coeffs_1 = calculate_poly_coefficients(self.m_list_1, self.config_1.boundary_conditions)
+        self.coeffs_2 = calculate_poly_coefficients(self.m_list_2, self.config_2.boundary_conditions)
+        self.coeffs_3 = calculate_poly_coefficients(self.m_list_3, self.config_3.boundary_conditions)
+        self.coeffs_4 = calculate_poly_coefficients(self.m_list_4, self.config_4.boundary_conditions)
+
+        # Словарь сегментов с данными (m_list и coeffs)
+        self._segments = {
+            1: (self.m_list_1, self.coeffs_1),
+            2: (self.m_list_2, self.coeffs_2),
+            3: (self.m_list_3, self.coeffs_3),
+            4: (self.m_list_4, self.coeffs_4)
+        }
+
+    def segment_selection(self, segment_number: int):
+        """Выбор параметров сегмента по его номеру."""
+        if segment_number not in self._segments:
+            raise ValueError(f"Сегмент {segment_number} не настроен")
+        return self._segments[segment_number]
 
     def h_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return h_phi(fi, self.m_list, self.coeffs, fi_1, fi_0, h_kn_max)
+        """Основной расчет функции h_phi."""
+        m_list, coeffs = self.segment_selection(segment_number)
+        return h_phi(fi, m_list, coeffs, fi_1, fi_0, h_kn_max)
 
     def v_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return v_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)
+        """Основной расчет функции v_phi."""
+        m_list, coeffs = self.segment_selection(segment_number)
+        return v_phi(fi, m_list, coeffs, fi_1, fi_0, h_kn_max)
 
     def a_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return a_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)
+        """Основной расчет функции a_phi."""
+        m_list, coeffs = self.segment_selection(segment_number)
+        return a_phi(fi, m_list, coeffs, fi_1, fi_0, h_kn_max)
 
     def d_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return d_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)
+        """Основной расчет функции d_phi."""
+        m_list, coeffs = self.segment_selection(segment_number)
+        return d_phi(fi, m_list, coeffs, fi_1, fi_0, h_kn_max)
 
     def k_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
-        return k_phi(fi, self.c_list, self.k_list, fi_1, fi_0, h_kn_max)
+        """Основной расчет функции k_phi."""
+        m_list, coeffs = self.segment_selection(segment_number)
+        return k_phi(fi, m_list, coeffs, fi_1, fi_0, h_kn_max)
