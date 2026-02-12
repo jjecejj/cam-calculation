@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from typing import Literal
 
-from .logic import display_animation, set_rotate_data, display_dashboard_animation
 
 class RotateAnimationOptions(BaseModel):
     # Настройки анимации

@@ -1,7 +1,6 @@
 from typing import List
 
 from pydantic import Field, model_validator, BaseModel
-from pytz.reference import Local
 
 from core.profiling_methods.base.config import MethodConfig
 

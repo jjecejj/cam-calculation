@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from core.cam_geometry.config import KulachokConfig, default_kulachok_config
 from core.profiling_methods.base import BaseCalculator
@@ -12,6 +12,7 @@ from core.profiling_methods.polinmail.logic import PolinmailCalculator
 
 
 class CamGeometryOptions(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     cam_config: KulachokConfig = Field(default=default_kulachok_config, description="Геометрические и кинематические параметры кулачка")
     calculator_config: MethodConfig | None = Field(default=None, description="Параметры профилирования кулачка")
     calculator: BaseCalculator | None = Field(default=None, description="Решатель для профилирования кулачка")

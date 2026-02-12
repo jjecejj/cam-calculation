@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from typing import Literal
 
-from .logic import build_profile
 
 class DxfCreatorOptions(BaseModel):
     import_dxf_flag: bool = Field(default=False, description="Экспортировать профиль в формат DXF")
