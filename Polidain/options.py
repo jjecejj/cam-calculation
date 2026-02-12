@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal, Callable, Union
 
 from core.cam_geometry.config import KulachokConfig, default_kulachok_config
+from core.cam_geometry.options import CamGeometryOptions
+from core.optimization.options import CamOptimizationOptions, calculate_cam_optimization
 from core.profiling_methods.base.config import MethodConfig
 from core.profiling_methods.polidain.config import default_polidain_config, PolidainConfig
 from core.cam_geometry import Kulachok
@@ -11,94 +13,23 @@ from core.optimization import (
     GibridOptimizationConfig, gibrid_optimization
 )
 from core.profiling_methods.polidain import PolidainCalculator
-from vizualization.plotter.options import (
-    display_graphs_kulachok, display_graphs_tolkatel,
-    display_profil, calculate_optimal_angle, display_dashboard
-)
-from vizualization.rotate_animation.options import display_animation, set_rotate_data, display_dashboard_animation
-from exporters.dxf_creator.options import build_profile
+from core.profiling_methods.polinmail.config import default_polinmail_config
+from vizualization.plotter.options import PlotterOptions
+from vizualization.rotate_animation.options import display_animation, set_rotate_data, display_dashboard_animation, \
+    RotateAnimationOptions
+from exporters.dxf_creator.options import build_profile, DxfCreatorOptions
 
 
 class CamSolveOptions(BaseModel):
     """
     Параметры для решения прямой задачи расчета геометрии кулачка.
     """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='forbid')
 
-    cam_config: KulachokConfig = Field(default=default_kulachok_config, description="Геометрические и кинематические параметры кулачка")
-    calculator_config: MethodConfig | None = Field(default=None, description="Параметры профилирования кулачка")
-    calculator: BaseCalculator | None = Field(default=None, description="Решатель для профилирования кулачка")
-    calculator_type: Literal['polidain'] = Field(default='polidain', description="Тип метода профилирования кулачка")
-    kulachok_type: Literal['thin', 'flat', 'roller'] = Field(default='thin', description="Тип толкателя: остроконечный, плоский или роликовый")
-    N: int = Field(default=1000, ge=10, description="Количество точек расчета")
-    initial_angle: float = Field(default=0.0, ge=0.0, le=360.0, description="Начальный угол поворота (град)")
-    calculate_optimal_initial_angle: bool = Field(default=True, description="Авторассчет оптимального начального угла")
-
-    # Флаги визуализации
-    graphs_tolkatel_flag: bool = Field(default=False, description="Показать графики движения толкателя")
-    graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")
-    graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков")
-    graphs_profile_flag: bool = Field(default=False, description="Показать профиль кулачка")
-    profile_and_graphs_together_flag: bool = Field(default=False, description="Показать профиль кулачка и графики в одном окне")
-
-    # Настройки анимации
-    display_animation_flag: bool = Field(default=False, description="Запустить анимацию работы механизма")
-    animation_profile_and_graphs_together_flag: bool = Field(default=False, description="Запустить анимацию работы механизма c графиками")
-    save_animation_flag: bool = Field(default=False, description="Сохранить анимацию в файл")
-    animation_intarval: int = Field(default=50, description="Интервал между кадрами (мс)")
-    profile_animation_name_file: str = Field(default="animation_profile", description="Имя файла для сохранения анимации профиля")
-    dashboard_animation_name_file: str = Field(default="animation_dashboard", description="Имя файла для сохранения анимации работы механизма c графиками")
-    animation_graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков анимации")
-    animation_pause_flag: bool = Field(default=False, description="Поддержка паузы во время анимации")
-
-    # Экспорт
-    import_dxf_flag: bool = Field(default=False, description="Экспортировать профиль в формат DXF")
-    dxf_profile_name: str = Field(default="kulachok_1", description="Имя файла DXF")
-    dxf_line_type: Literal["spline", "line"] = Field(default="spline", description="Тип геометрии в DXF")
-
-    @model_validator(mode='after')
-    def resolve_conflicting_flags(self):
-        """
-        Автоматически разрешает конфликты флагов визуализации.
-        Если выбран режим 'together', он имеет приоритет.
-        """
-        if self.profile_and_graphs_together_flag:
-            self.graphs_profile_flag = True
-
-            if not self.graphs_tolkatel_flag and not self.graphs_kulachok_flag:
-                self.graphs_kulachok_flag = True
-
-        return self
-
-    @model_validator(mode='after')
-    def resolve_calculator_config(self):
-        if self.calculator_config is None:
-            if self.calculator_type == 'polidain':
-                self.calculator_config = default_polidain_config
-        return self
-
-    @model_validator(mode='after')
-    def resolve_calculator(self):
-        if self.calculator is None:
-            if type(self.calculator_config) is PolidainConfig:
-                self.calculator = PolidainCalculator(self.calculator_config)
-            else:
-                raise ValueError("calculator_config неправильного типа")
-        return self
-
-class CamOptimizationOptions(BaseModel):
-    """
-    Параметры для решения задачи оптимизации параметров кулачка.
-    """
-    optimiz_config: OptimizeConfig
-    gibrid_optimization_config: GibridOptimizationConfig
-    bounds_config: BoundsConfig = Field(default_factory=BoundsConfig, description="Границы переменных оптимизации")
-    differential_evolution_config: DifferentialEvolutionConfig = Field(
-        default_factory=DifferentialEvolutionConfig, description="Настройки алгоритма дифференциальной эволюции"
-    )
-    R_func: Callable = Field(description="Функция расчета радиус-вектора")
-    display_comprasion_profil_flag: bool = Field(default=True, description="Сравнить полученный профиль с эталонным")
-    N: int = Field(default=1000, ge=10, description="Разрешение профиля при оптимизации")
+    cam_geometry_options: CamGeometryOptions = Field(default_factory=CamGeometryOptions)
+    plotter_options: PlotterOptions = Field(default_factory=PlotterOptions)
+    rotate_animation_options: RotateAnimationOptions = Field(default_factory=RotateAnimationOptions)
+    dxf_creator_options: DxfCreatorOptions = Field(default_factory=DxfCreatorOptions)
 
 def calculate_cam_solve(cam_solve_options: CamSolveOptions):
     """
@@ -134,7 +65,7 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
 
     # 4. Анимация
     if cam_solve_options.display_animation_flag:
-        rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.solve_type)
+        rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.tolkatel_solve_type)
         display_animation(
             rotate_data,
             interval=cam_solve_options.animation_intarval,
@@ -143,12 +74,12 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
             pause_flag=cam_solve_options.animation_pause_flag,
         )
     if cam_solve_options.animation_profile_and_graphs_together_flag:
-        display_dashboard_animation(kulachok, tolkatel_type=kulachok.solve_type,
+        display_dashboard_animation(kulachok, tolkatel_type=kulachok.tolkatel_solve_type,
                                     interval=cam_solve_options.animation_intarval,
                                     save_flag=cam_solve_options.save_animation_flag,
                                     name_file=cam_solve_options.dashboard_animation_name_file,
                                     graphs_type=cam_solve_options.animation_graphs_argument_type,
-                                    pause_flag=cam_solve_options.animation_pause_flag,)
+                                    pause_flag=cam_solve_options.animation_pause_flag, )
 
     # 5. Экспорт в DXF
     if cam_solve_options.import_dxf_flag:
@@ -157,19 +88,6 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
             profile_name=cam_solve_options.dxf_profile_name,
             line_type=cam_solve_options.dxf_line_type
         )
-
-def calculate_cam_optimization(cam_optimization_options: CamOptimizationOptions):
-    """
-    Запускает процесс гибридной оптимизации кулачкового механизма.
-    """
-    gibrid_optimization(
-        cam_optimization_options.gibrid_optimization_config,
-        cam_optimization_options.optimiz_config,
-        cam_optimization_options.R_func,
-        differential_evolution_config=cam_optimization_options.differential_evolution_config,
-        bounds_config=cam_optimization_options.bounds_config,
-        N=cam_optimization_options.N
-    )
 
 def calculate(cam_options: Union[CamSolveOptions, CamOptimizationOptions]):
     """

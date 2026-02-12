@@ -34,7 +34,7 @@ class Kulachok:
         self.tolkatel_solve_flag: bool = False
         self.profile_solve_flag: bool = False
 
-        self.solve_type: str = None
+        self.tolkatel_solve_type: str = None
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int],
                       const_list: List[float]) -> float | np.ndarray:
@@ -195,7 +195,7 @@ class Kulachok:
     def set_profile_data(self, N: int = 1000):
         self.profile_data = set_profile_data([self.fun_x, self.fun_y], N = N)
         self.profile_solve_flag = True
-        self.solve_type = "thin"
+        self.tolkatel_solve_type = "thin"
 
     def solve(self, kulachok_type: Literal['thin', 'flat', 'roller'] = 'thin', N: int = 1000):
         self.set_tolkatel_data(N = N)
@@ -252,7 +252,7 @@ class Kulachok:
         R_func = interp1d(fi_list_kulachok, R, kind="linear")
         self.profile_data = ProfileData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
         self.profile_solve_flag = True
-        self.solve_type = "flat"
+        self.tolkatel_solve_type = "flat"
 
     def profile_roller_check(self):
         h = self.tolkatel_data.H_rad
@@ -330,4 +330,4 @@ class Kulachok:
                                        X=xp,
                                        Y=yp)
         self.profile_solve_flag = True
-        self.solve_type = "roller"
+        self.tolkatel_solve_type = "roller"

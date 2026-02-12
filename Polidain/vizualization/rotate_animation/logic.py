@@ -1,43 +1,13 @@
 from numpy import ndarray
-from pydantic import BaseModel, Field, ConfigDict, model_validator
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
 import matplotlib.gridspec as gridspec
-from typing import Literal, Union
+from typing import Literal
 
 from core.cam_geometry import Kulachok
-
-
-class RotateProfileData(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    fi_list: np.ndarray[float | np.ndarray] | list[float | np.ndarray]
-    movement_data: list[tuple[ndarray | list, ndarray | list]]
-    tolkatel_data: np.ndarray[float | np.ndarray] | list[float | np.ndarray]
-    tolkatel_type: str
-    tolkatel_D_t: float | None = None
-    tolkatel_R_r: float | None = None
-
-    @model_validator(mode='after')
-    def tolkatel_check(self):
-        if self.tolkatel_type == "flat":
-            if self.tolkatel_D_t is None or self.tolkatel_D_t <= 0:
-                raise ValueError("tolkatel_D_t must be greater than zero")
-        elif self.tolkatel_type == "roller":
-            if self.tolkatel_R_r is None or self.tolkatel_R_r <= 0:
-                raise ValueError("tolkatel_R_r must be greater than zero")
-        elif self.tolkatel_type == "thin":
-            pass
-        else:
-            raise ValueError("tolkatel_type must be either flat or roller or thin")
-        return self
-
-    @model_validator(mode='after')
-    def data_check(self):
-        if len(self.movement_data) != len(self.fi_list) or len(self.tolkatel_data) != len(self.fi_list):
-            raise ValueError("Массивы с данными о перемещении элементов должны иметь одинаковую размерность!")
-        return self
+from vizualization.rotate_animation.config import RotateProfileData
 
 
 def rotate_profile_data(X: float | ndarray, Y: float | ndarray, angle: float):
@@ -47,35 +17,35 @@ def rotate_profile_data(X: float | ndarray, Y: float | ndarray, angle: float):
     return (x_new, y_new)
 
 
-def set_rotate_data(kulachok: Kulachok, tolkatel_type: Literal['flat', 'roller', 'thin']):
-    if not (kulachok.kulachok_solve_flag and kulachok.tolkatel_solve_flag and kulachok.profil_solve_flag):
+def set_rotate_data(kulachok: Kulachok):
+    if not (kulachok.kulachok_solve_flag and kulachok.tolkatel_solve_flag and kulachok.profile_solve_flag):
         raise ValueError(f"Не были проведены предварительные вычисления кулачка")
 
     fi_list = kulachok.kulachok_data.fi_list_rad.copy()
     movement_data = []
     for i in fi_list:
-        movement_data.append(rotate_profile_data(kulachok.profil_data.X, kulachok.profil_data.Y, i))
+        movement_data.append(rotate_profile_data(kulachok.profile_data.X, kulachok.profile_data.Y, i))
 
-    # Здесь H_rad + D/2 - это расстояние от центра вращения до "поверхности" толкателя (S + R_base)
-    # Это положительная величина (радиус-вектор)
     tolkatel_data = kulachok.tolkatel_data.H_rad.copy() + kulachok.config.D * 1e3 / 2
-
     tolkatel_D_t = kulachok.config.D_t * 1e3
     tolkatel_R_r = kulachok.config.R_r * 1e3
 
     return RotateProfileData(fi_list=fi_list,
                              movement_data=movement_data,
                              tolkatel_data=tolkatel_data,
-                             tolkatel_type=tolkatel_type,
+                             tolkatel_type=kulachok.tolkatel_solve_type,
                              tolkatel_D_t=tolkatel_D_t,
                              tolkatel_R_r=tolkatel_R_r)
 
 
-def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bool = False,
+def display_animation(kulachok: Kulachok, interval: int = 50, save_flag: bool = False,
                       name_file: str | None = None, pause_flag=False):
     """
     Анимирует вращение кулачка и движение толкателя.
     """
+
+    data = set_rotate_data(kulachok)
+
     # 1. Подготовка фигуры
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_aspect('equal')
@@ -177,7 +147,7 @@ def display_animation(data: RotateProfileData, interval: int = 50, save_flag: bo
     plt.show()
 
 
-def display_dashboard_animation(kulachok: Kulachok, tolkatel_type: Literal['flat', 'roller', 'thin'],
+def display_dashboard_animation(kulachok: Kulachok,
                                 interval: int = 50,
                                 save_flag: bool = False,
                                 pause_flag: bool = False,
@@ -187,7 +157,7 @@ def display_dashboard_animation(kulachok: Kulachok, tolkatel_type: Literal['flat
     Анимирует приборную панель: слева бегущий курсор по графикам, справа вращение механизма.
     """
     # 1. Подготовка данных
-    t_type = tolkatel_type
+    t_type = kulachok.tolkatel_solve_type
     rotate_data = set_rotate_data(kulachok, tolkatel_type=t_type)
     data_kin = kulachok.tolkatel_data
 
