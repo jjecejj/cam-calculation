@@ -7,19 +7,15 @@ from scipy.interpolate import interp1d
 
 class CamProfileError(Exception):
     """Базовый класс для ошибок профиля кулачка"""
-    pass
 
 class PusherDiameterError(CamProfileError):
     """Ошибка: недостаточный диаметр толкателя"""
-    pass
 
 class ProfileSmoothnessError(CamProfileError):
     """Ошибка: негладкий профиль (подрез профиля)"""
-    pass
 
 class SolvePreliminaryCalculations(CamProfileError):
     """Ошибка: Не были проведены необходимые вычисления"""
-    pass
 
 class Kulachok:
     def __init__(self, config: KulachokConfig, profile_method_calculator: BaseCalculator):

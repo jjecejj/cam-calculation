@@ -2,7 +2,7 @@ import numpy as np
 
 from core.cam_geometry import Kulachok
 from core.cam_geometry.config import KulachokConfig
-from core.profiling_methods.polinmail.config import default_polinmail_config, PolinmailConfig, LocalPolinmailConfig
+from core.profiling_methods.polinmail.config import PolinmailConfig, LocalPolinmailConfig
 from core.profiling_methods.polinmail.logic import PolinmailCalculator
 from options import CamSolveOptions, calculate_cam_solve
 from vizualization.plotter.logic import display_graphs_kulachok, display_graphs_tolkatel, display_profil

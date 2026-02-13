@@ -1,23 +1,14 @@
-from pydantic import BaseModel, Field, model_validator, ConfigDict
-from typing import Literal, Callable, Union
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Union
 
-from core.cam_geometry.config import KulachokConfig, default_kulachok_config
 from core.cam_geometry.options import CamGeometryOptions
 from core.optimization.options import CamOptimizationOptions, calculate_cam_optimization
-from core.profiling_methods.base.config import MethodConfig
-from core.profiling_methods.polidain.config import default_polidain_config, PolidainConfig
 from core.cam_geometry import Kulachok
-from core.profiling_methods.base import BaseCalculator
-from core.optimization import (
-    OptimizeConfig, BoundsConfig, DifferentialEvolutionConfig,
-    GibridOptimizationConfig, gibrid_optimization
-)
-from core.profiling_methods.polidain import PolidainCalculator
-from core.profiling_methods.polinmail.config import default_polinmail_config
 from vizualization.plotter.options import PlotterOptions
-from vizualization.rotate_animation.options import display_animation, set_rotate_data, display_dashboard_animation, \
-    RotateAnimationOptions
-from exporters.dxf_creator.options import build_profile, DxfCreatorOptions
+from vizualization.rotate_animation.logic import display_animation, set_rotate_data, display_dashboard_animation
+from vizualization.rotate_animation.options import RotateAnimationOptions
+from exporters.dxf_creator.logic import build_profile
+from exporters.dxf_creator.options import DxfCreatorOptions
 
 
 class CamSolveOptions(BaseModel):
