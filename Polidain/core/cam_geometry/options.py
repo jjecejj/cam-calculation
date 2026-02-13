@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
+from core.cam_geometry import Kulachok
 from core.cam_geometry.config import KulachokConfig, default_kulachok_config
 from core.profiling_methods.base import BaseCalculator
 from core.profiling_methods.base.config import MethodConfig
@@ -9,6 +10,7 @@ from core.profiling_methods.polidain import PolidainCalculator
 from core.profiling_methods.polidain.config import default_polidain_config, PolidainConfig
 from core.profiling_methods.polinmail.config import default_polinmail_config, PolinmailConfig
 from core.profiling_methods.polinmail.logic import PolinmailCalculator
+from vizualization.plotter.logic import calculate_optimal_angle
 
 
 class CamGeometryOptions(BaseModel):
@@ -41,3 +43,15 @@ class CamGeometryOptions(BaseModel):
             else:
                 raise ValueError("calculator_config неправильного типа")
         return self
+
+def resolve_cam_geometry_options(config: CamGeometryOptions):
+    # 1. Инициализация и расчет
+    kulachok = Kulachok(config.cam_config, config.calculator)
+    kulachok.solve(kulachok_type=config.kulachok_type, N=config.N)
+
+    # 2. Определение начального угла
+    if config.calculate_optimal_initial_angle:
+        initial_angle = calculate_optimal_angle(kulachok)
+    else:
+        initial_angle = config.initial_angle
+    return kulachok, initial_angle

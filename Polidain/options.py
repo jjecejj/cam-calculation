@@ -1,14 +1,11 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Union
 
-from core.cam_geometry.options import CamGeometryOptions
+from core.cam_geometry.options import CamGeometryOptions, resolve_cam_geometry_options
 from core.optimization.options import CamOptimizationOptions, calculate_cam_optimization
-from core.cam_geometry import Kulachok
-from vizualization.plotter.options import PlotterOptions
-from vizualization.rotate_animation.logic import display_animation, set_rotate_data, display_dashboard_animation
-from vizualization.rotate_animation.options import RotateAnimationOptions
-from exporters.dxf_creator.logic import build_profile
-from exporters.dxf_creator.options import DxfCreatorOptions
+from vizualization.plotter.options import PlotterOptions, resolve_plotter_options
+from vizualization.rotate_animation.options import RotateAnimationOptions, resolve_rotate_animation_options
+from exporters.dxf_creator.options import DxfCreatorOptions, resolve_dxf_creator_options
 
 
 class CamSolveOptions(BaseModel):
@@ -26,59 +23,10 @@ def calculate_cam_solve(cam_solve_options: CamSolveOptions):
     """
     Выполняет расчет геометрии кулачка и запускает выбранные методы вывода (графики, анимация, DXF).
     """
-    # 1. Инициализация и расчет
-    kulachok = Kulachok(cam_solve_options.cam_config, cam_solve_options.calculator)
-    kulachok.solve(kulachok_type=cam_solve_options.kulachok_type, N=cam_solve_options.N)
-
-    # 2. Определение начального угла
-    if cam_solve_options.calculate_optimal_initial_angle:
-        initial_angle = calculate_optimal_angle(kulachok)
-    else:
-        initial_angle = cam_solve_options.initial_angle
-
-    # 3. Отрисовка графиков
-    if cam_solve_options.profile_and_graphs_together_flag:
-        if cam_solve_options.graphs_kulachok_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type, target='kulachok')
-
-        if cam_solve_options.graphs_tolkatel_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=cam_solve_options.graphs_argument_type,  target='tolkatel')
-
-    else:
-        if cam_solve_options.graphs_tolkatel_flag:
-            display_graphs_tolkatel(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
-
-        if cam_solve_options.graphs_kulachok_flag:
-            display_graphs_kulachok(kulachok.kulachok_data, initial_angle=initial_angle, graphs_type= cam_solve_options.graphs_argument_type)
-
-        if cam_solve_options.graphs_profile_flag:
-            display_profil(kulachok.profile_data, initial_angle=initial_angle)
-
-    # 4. Анимация
-    if cam_solve_options.display_animation_flag:
-        rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.tolkatel_solve_type)
-        display_animation(
-            rotate_data,
-            interval=cam_solve_options.animation_intarval,
-            save_flag=cam_solve_options.save_animation_flag,
-            name_file=cam_solve_options.profile_animation_name_file,
-            pause_flag=cam_solve_options.animation_pause_flag,
-        )
-    if cam_solve_options.animation_profile_and_graphs_together_flag:
-        display_dashboard_animation(kulachok, tolkatel_type=kulachok.tolkatel_solve_type,
-                                    interval=cam_solve_options.animation_intarval,
-                                    save_flag=cam_solve_options.save_animation_flag,
-                                    name_file=cam_solve_options.dashboard_animation_name_file,
-                                    graphs_type=cam_solve_options.animation_graphs_argument_type,
-                                    pause_flag=cam_solve_options.animation_pause_flag, )
-
-    # 5. Экспорт в DXF
-    if cam_solve_options.import_dxf_flag:
-        build_profile(
-            kulachok.profile_data,
-            profile_name=cam_solve_options.dxf_profile_name,
-            line_type=cam_solve_options.dxf_line_type
-        )
+    kulachok, initial_angle = resolve_cam_geometry_options(cam_solve_options.cam_geometry_options)
+    resolve_plotter_options(cam_solve_options.plotter_options, kulachok, initial_angle)
+    resolve_rotate_animation_options(cam_solve_options.rotate_animation_options, kulachok)
+    resolve_dxf_creator_options(cam_solve_options.dxf_creator_options, kulachok)
 
 def calculate(cam_options: Union[CamSolveOptions, CamOptimizationOptions]):
     """

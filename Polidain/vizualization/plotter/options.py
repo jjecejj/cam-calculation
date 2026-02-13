@@ -1,6 +1,11 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Literal
 
+from core.cam_geometry import Kulachok
+from vizualization.plotter.logic import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, \
+    display_profil
+
+
 class PlotterOptions(BaseModel):
     graphs_tolkatel_flag: bool = Field(default=False, description="Показать графики движения толкателя")
     graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")
@@ -21,3 +26,25 @@ class PlotterOptions(BaseModel):
                 self.graphs_kulachok_flag = True
 
         return self
+
+def resolve_plotter_options(config: PlotterOptions, kulachok: Kulachok, initial_angle: float):
+    if config.profile_and_graphs_together_flag:
+        if config.graphs_kulachok_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
+                              target='kulachok')
+
+        if config.graphs_tolkatel_flag:
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
+                              target='tolkatel')
+
+    else:
+        if config.graphs_tolkatel_flag:
+            display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=initial_angle,
+                                    graphs_type=config.graphs_argument_type)
+
+        if config.graphs_kulachok_flag:
+            display_graphs_kulachok(kulachok.kulachok_data, initial_angle=initial_angle,
+                                    graphs_type=config.graphs_argument_type)
+
+        if config.graphs_profile_flag:
+            display_profil(kulachok.profile_data, initial_angle=initial_angle)
