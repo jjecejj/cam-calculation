@@ -210,7 +210,7 @@ class Kulachok:
         max_v = np.max(self.tolkatel_data.V_t / self.config.omega)
         if self.config.D_t * 1e3 / 2 <= max_v:
             raise PusherDiameterError(
-                f"Недостаточный диаметр толкателя: {self.config.D_t * 1e3:.2f} <= {max_v:.2f}"
+                f"Недостаточный диаметр толкателя: {self.config.D_t * 1e3:.2f} <= {max_v * 2:.2f}"
             )
 
         curvature_check = self.tolkatel_data.H_rad + self.tolkatel_data.A_rad + 500 * self.config.D

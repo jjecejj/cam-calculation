@@ -154,13 +154,17 @@ def display_graphs_tolkatel(data: GraphData, initial_angle: float | int = 0,
     plt.tight_layout()
     plt.show()
 
-def display_profil(data: ProfileData, initial_angle: float | int = 0):
+def display_profile(data: ProfileData, initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
     i_list = set_initial_angle(data.fi_list, initial_angle=initial_angle)
     X = np.asarray(data.X)
     Y = np.asarray(data.Y)
+    X_sorted = X[i_list]
+    Y_sorted = Y[i_list]
+    X_plot = np.append(X_sorted, X_sorted[0])
+    Y_plot = np.append(Y_sorted, Y_sorted[0])
 
-    plt.plot(X[i_list], Y[i_list])
+    plt.plot(X_plot, Y_plot)
     plt.scatter([0], [0], color='black', marker='x', label='Центр вращения')
     plt.xlabel('X, мм')
     plt.ylabel('Y, мм')
@@ -184,7 +188,7 @@ def display_all(kulachok: Kulachok, initial_angle: Union[float, int, str] = 0, g
 
     display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle, graphs_type=graphs_type)
     display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle, graphs_type=graphs_type)
-    display_profil(kulachok.profil_data, initial_angle=target_angle)
+    display_profile(kulachok.profile_data, initial_angle=target_angle)
 
 def display_dashboard(kulachok: Kulachok,
                       initial_angle: Union[float, int, str] = 0,
@@ -269,13 +273,13 @@ def display_dashboard(kulachok: Kulachok,
     # === ПРАВАЯ ЧАСТЬ: Профиль ===
     ax_profile = fig.add_subplot(gs[:, 2])  # Занимаем последнюю колонку, все строки
 
-    profil_data = kulachok.profil_data
+    profile_data = kulachok.profile_data
     # Сортировка для профиля всегда через set_initial_angle (она внутри понимает градусы/радианы по умолчанию)
-    # Но profil_data.fi_list обычно в градусах, поэтому используем target_angle
-    i_list_prof = set_initial_angle(profil_data.fi_list, initial_angle=target_angle)
+    # Но profile_data.fi_list обычно в градусах, поэтому используем target_angle
+    i_list_prof = set_initial_angle(profile_data.fi_list, initial_angle=target_angle)
 
-    X = np.asarray(profil_data.X)
-    Y = np.asarray(profil_data.Y)
+    X = np.asarray(profile_data.X)
+    Y = np.asarray(profile_data.Y)
 
     ax_profile.plot(X[i_list_prof], Y[i_list_prof], linewidth=2)
     ax_profile.scatter([0], [0], color='black', marker='x', s=100, label='Центр вращения')
@@ -359,4 +363,4 @@ def display_all_compression(kulachok: Kulachok, data_graph: GraphData, data_prof
         raise ValueError("initial_angle должен быть числом или 'auto'")
 
     display_graphs_compression(kulachok.kulachok_data, data_graph, initial_angle=target_angle)
-    display_profile_compression(kulachok.profil_data, data_profile, initial_angle=target_angle)
+    display_profile_compression(kulachok.profile_data, data_profile, initial_angle=target_angle)

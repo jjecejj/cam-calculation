@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
@@ -6,6 +6,8 @@ from vizualization.rotate_animation.logic import set_rotate_data, display_animat
 
 
 class RotateAnimationOptions(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='forbid')
+
     # Настройки анимации
     display_animation_flag: bool = Field(default=False, description="Запустить анимацию работы механизма")
     animation_profile_and_graphs_together_flag: bool = Field(default=False, description="Запустить анимацию работы механизма c графиками")
@@ -18,16 +20,15 @@ class RotateAnimationOptions(BaseModel):
 
 def resolve_rotate_animation_options(config: RotateAnimationOptions, kulachok: Kulachok):
     if config.display_animation_flag:
-        rotate_data = set_rotate_data(kulachok, tolkatel_type=kulachok.tolkatel_solve_type)
         display_animation(
-            rotate_data,
+            kulachok,
             interval=config.animation_intarval,
             save_flag=config.save_animation_flag,
             name_file=config.profile_animation_name_file,
             pause_flag=config.animation_pause_flag,
         )
     if config.animation_profile_and_graphs_together_flag:
-        display_dashboard_animation(kulachok, tolkatel_type=kulachok.tolkatel_solve_type,
+        display_dashboard_animation(kulachok,
                                     interval=config.animation_intarval,
                                     save_flag=config.save_animation_flag,
                                     name_file=config.dashboard_animation_name_file,

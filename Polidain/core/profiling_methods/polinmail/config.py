@@ -1,5 +1,6 @@
 from typing import List
 
+from docutils.nodes import field
 from pydantic import Field, model_validator, BaseModel
 
 from core.profiling_methods.base.config import MethodConfig
@@ -26,10 +27,20 @@ class LocalPolinmailConfig(BaseModel):
         return self
 
 class PolinmailConfig(MethodConfig):
-    config_1: LocalPolinmailConfig
-    config_2: LocalPolinmailConfig
-    config_3: LocalPolinmailConfig
-    config_4: LocalPolinmailConfig
+    config_1: LocalPolinmailConfig = Field(default_factory=LocalPolinmailConfig)
+    config_2: LocalPolinmailConfig | None = None
+    config_3: LocalPolinmailConfig | None = None
+    config_4: LocalPolinmailConfig | None = None
+
+    @model_validator(mode='after')
+    def config_resolve(self):
+        if self.config_2 is None:
+            self.config_2 = self.config_1
+        if self.config_3 is None:
+            self.config_3 = self.config_1
+        if self.config_4 is None:
+            self.config_4 = self.config_1
+        return self
 
 default_local_polinmail_config = LocalPolinmailConfig(
     m = 5,

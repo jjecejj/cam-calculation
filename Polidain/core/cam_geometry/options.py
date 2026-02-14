@@ -14,10 +14,11 @@ from vizualization.plotter.logic import calculate_optimal_angle
 
 
 class CamGeometryOptions(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='forbid')
+
     cam_config: KulachokConfig = Field(default=default_kulachok_config, description="Геометрические и кинематические параметры кулачка")
-    calculator_config: MethodConfig | None = Field(default=None, description="Параметры профилирования кулачка")
     calculator: BaseCalculator | None = Field(default=None, description="Решатель для профилирования кулачка")
+    calculator_config: MethodConfig | None = Field(default=None, description="Параметры профилирования кулачка")
     calculator_type: Literal['polidain', 'polinmail'] = Field(default='polidain', description="Тип метода профилирования кулачка")
     kulachok_type: Literal['thin', 'flat', 'roller'] = Field(default='thin', description="Тип толкателя: остроконечный, плоский или роликовый")
     N: int = Field(default=1000, ge=10, description="Количество точек расчета")
@@ -26,7 +27,7 @@ class CamGeometryOptions(BaseModel):
 
     @model_validator(mode='after')
     def resolve_calculator_config(self):
-        if self.calculator_config is None:
+        if (self.calculator_config is None) and (self.calculator is None):
             if self.calculator_type == 'polidain':
                 self.calculator_config = default_polidain_config
             elif self.calculator_type == 'polinmail':

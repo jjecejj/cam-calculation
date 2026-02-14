@@ -1,12 +1,13 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
-from vizualization.plotter.logic import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, \
-    display_profil
+from vizualization.plotter.logic import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, display_profile
 
 
 class PlotterOptions(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='forbid')
+
     graphs_tolkatel_flag: bool = Field(default=False, description="Показать графики движения толкателя")
     graphs_kulachok_flag: bool = Field(default=False, description="Показать графики характеристик кулачка")
     graphs_argument_type: Literal['degree', 'rad', 't'] = Field(default='degree', description="Аргумент графиков")
@@ -47,4 +48,4 @@ def resolve_plotter_options(config: PlotterOptions, kulachok: Kulachok, initial_
                                     graphs_type=config.graphs_argument_type)
 
         if config.graphs_profile_flag:
-            display_profil(kulachok.profile_data, initial_angle=initial_angle)
+            display_profile(kulachok.profile_data, initial_angle=initial_angle)
