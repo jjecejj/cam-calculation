@@ -179,8 +179,15 @@ class CamConfiguratorApp(ctk.CTk):
     def init_plotter_tab(self):
         self.plot_tolkatel = ctk.CTkCheckBox(self.tab_plot, text="Графики толкателя")
         self.plot_tolkatel.pack(padx=20, pady=10, anchor="w")
+
         self.plot_kulachok = ctk.CTkCheckBox(self.tab_plot, text="Графики кулачка")
         self.plot_kulachok.pack(padx=20, pady=10, anchor="w")
+
+        self.plot_profile = ctk.CTkCheckBox(self.tab_plot, text="Показать профиль")
+        self.plot_profile.pack(padx=20, pady=10, anchor="w")
+
+        self.plot_together = ctk.CTkCheckBox(self.tab_plot, text="Профиль и графики вместе")
+        self.plot_together.pack(padx=20, pady=10, anchor="w")
 
         ctk.CTkLabel(self.tab_plot, text="Аргумент графиков:").pack(padx=20, pady=(15, 0), anchor="w")
         self.plot_arg_type = ctk.CTkOptionMenu(self.tab_plot, values=['degree', 'rad', 't'])
@@ -194,7 +201,12 @@ class CamConfiguratorApp(ctk.CTk):
     def init_dxf_tab(self):
         self.dxf_import = ctk.CTkCheckBox(self.tab_dxf, text="Экспортировать в DXF", command=self.toggle_dxf_name)
         self.dxf_import.grid(row=0, column=0, columnspan=2, padx=10, pady=20, sticky="w")
+
         self.create_entry(self.tab_dxf, "dxf_name", "Имя файла DXF:", "kulachok_1", 1)
+
+        ctk.CTkLabel(self.tab_dxf, text="Тип геометрии:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        self.dxf_line = ctk.CTkOptionMenu(self.tab_dxf, values=["spline", "line"])
+        self.dxf_line.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 
     def get_current_data_dict(self) -> Dict[str, Any]:
         """
@@ -254,6 +266,8 @@ class CamConfiguratorApp(ctk.CTk):
                 "graphs_tolkatel_flag": bool(self.plot_tolkatel.get()),
                 "graphs_kulachok_flag": bool(self.plot_kulachok.get()),
                 "graphs_argument_type": self.plot_arg_type.get(),
+                "graphs_profile_flag": bool(self.plot_profile.get()),
+                "profile_and_graphs_together_flag": bool(self.plot_together.get()),
             },
             "rotate_animation_options": {
                 "display_animation_flag": bool(self.anim_display.get()),
@@ -262,6 +276,7 @@ class CamConfiguratorApp(ctk.CTk):
             "dxf_creator_options": {
                 "import_dxf_flag": bool(self.dxf_import.get()),
                 "dxf_profile_name": self.entries["dxf_name"].get(),
+                "dxf_line_type": self.dxf_line.get(),
             }
         }
         return data
@@ -409,6 +424,12 @@ class CamConfiguratorApp(ctk.CTk):
             if plot.get("graphs_kulachok_flag"): self.plot_kulachok.select()
             else: self.plot_kulachok.deselect()
 
+            if plot.get("graphs_profile_flag"): self.plot_profile.select()
+            else: self.plot_profile.deselect()
+
+            if plot.get("profile_and_graphs_together_flag"): self.plot_together.select()
+            else: self.plot_together.deselect()
+
             if "graphs_argument_type" in plot: self.plot_arg_type.set(plot["graphs_argument_type"])
 
             # --- RotateAnimationOptions ---
@@ -431,6 +452,9 @@ class CamConfiguratorApp(ctk.CTk):
             if "dxf_profile_name" in dxf:
                 self.entries["dxf_name"].delete(0, 'end')
                 self.entries["dxf_name"].insert(0, str(dxf["dxf_profile_name"]))
+
+            if "dxf_line_type" in dxf:
+                self.dxf_line.set(dxf["dxf_line_type"])
 
             messagebox.showinfo("Успех", "Данные успешно загружены!")
         except Exception as e:
