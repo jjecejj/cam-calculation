@@ -1,7 +1,6 @@
 from core.profiling_methods.polidain.config import PolidainConfig
 from core.profiling_methods.base import BaseCalculator
 
-
 def k_fun(p, m, d):
     """
         :param m: Младшая степень полинома
@@ -25,11 +24,11 @@ def c_fun(p, m, d):
     q = temp[2]
     r = temp[3]
     s = temp[4]
-    C2 = -p * q * r * s / ((p - m) * (q - m) * (r - m) * (s - m))
-    Cp = m * q * r * s / ((p - m) * (q - p) * (r - p) * (s - p))
-    Cq = -m * p * s * r / ((q - m) * (r - q) * (q - p) * (s - q))
-    Cr = m * p * q * s / ((r - m) * (s - r) * (r - p) * (r - q))
-    Cs = -m * p * q * r / ((s - m) * (s - p) * (s - q) * (s - r))
+    C2 = p * q * r * s / ((p - m) * (q - m) * (r - m) * (s - m))
+    Cp = -m * q * r * s / ((p - m) * (q - p) * (r - p) * (s - p))
+    Cq = m * p * s * r / ((q - m) * (r - q) * (q - p) * (s - q))
+    Cr = -m * p * q * s / ((r - m) * (s - r) * (r - p) * (r - q))
+    Cs = m * p * q * r / ((s - m) * (s - p) * (s - q) * (s - r))
     return [C2, Cp, Cq, Cr, Cs]
 
 def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
@@ -42,7 +41,7 @@ def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
     :param fi_0:Начало характерного участка
     :param h_kn_max: максимальная высота подёма кулачка на характерном участке
     '''
-    temp = 1
+    temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 0 < 0:
             continue
@@ -162,4 +161,3 @@ class PolidainCalculator(BaseCalculator):
     def k_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
         c_list, k_list = self.segment_selection(segment_number)
         return k_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)
-

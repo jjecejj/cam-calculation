@@ -33,9 +33,9 @@ if __name__ == '__main__':
     cam_geometry_options = CamGeometryOptions(
         cam_config = config,
         calculator = calculator,
-        N = 50,
+        N = 5000,
         calculate_optimal_initial_angle = True,
-        kulachok_type='flat'
+        kulachok_type='thin'
     )
     plotter_options = PlotterOptions(
         graphs_kulachok_flag = True,
@@ -44,8 +44,8 @@ if __name__ == '__main__':
         graphs_argument_type = 't',
     )
     rotate_animation_options = RotateAnimationOptions(
-        display_animation_flag = True,
-        save_animation_flag = True
+        display_animation_flag = False,
+        save_animation_flag = False
     )
     cso = CamSolveOptions(cam_geometry_options = cam_geometry_options,
                           plotter_options = plotter_options,

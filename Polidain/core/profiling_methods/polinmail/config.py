@@ -1,9 +1,8 @@
 from typing import List
-
-from docutils.nodes import field
 from pydantic import Field, model_validator, BaseModel
 
 from core.profiling_methods.base.config import MethodConfig
+
 
 class ValidationError(Exception):
     pass

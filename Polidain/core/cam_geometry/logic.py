@@ -112,66 +112,66 @@ class Kulachok:
         return result
 
     def fun_h(self, fi: float | np.ndarray):
-        return self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
-                                                                self.config.r0 + self.config.h,
-                                                                self.config.r0 + self.config.h,
+        return self.fun_universal(fi, self.profile_method_calculator.h_phi, [1, 1, 1, 1], [self.config.r0 - self.config.z,
+                                                                self.config.r0,
                                                                 self.config.r0 + self.config.h,
                                                                 self.config.r0,
+                                                                self.config.r0 - self.config.z,
                                                                 self.config.r0 - self.config.z])
 
-    def fun_h_2(self, fi: float | np.ndarray):
+    def fun_h_tolkatel(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
-                                                                     self.config.r0 + self.config.h,
-                                                                     self.config.r0 + self.config.h,
-                                                                     self.config.r0 + self.config.h,
-                                                                     self.config.r0,
-                                                                     self.config.r0 - self.config.z]) - self.config.r0) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [-1, -1, -1, -1], [self.config.r0,
-                                                                 self.config.r0 + self.config.h,
-                                                                 self.config.r0 + self.config.h,
-                                                                 self.config.r0 + self.config.h,
-                                                                 self.config.r0,
-                                                                 self.config.r0 - self.config.z]) - self.config.r0) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
+            return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [1, 1, 1, 1], [self.config.r0 - self.config.z,
+                                                                self.config.r0,
+                                                                self.config.r0 + self.config.h,
+                                                                self.config.r0,
+                                                                self.config.r0 - self.config.z,
+                                                                self.config.r0 - self.config.z]) - self.config.r0) * np.int64(fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
+        return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [1, 1, 1, 1], [self.config.r0 - self.config.z,
+                                                                self.config.r0,
+                                                                self.config.r0 + self.config.h,
+                                                                self.config.r0,
+                                                                self.config.r0 - self.config.z,
+                                                                self.config.r0 - self.config.z]) - self.config.r0) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
 
     def fun_v(self, fi: float | np.ndarray):
-        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0])
 
-    def fun_v_2(self, fi: float | np.ndarray):
+    def fun_v_tolkatel(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.v_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.v_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
     def fun_a(self, fi: float | np.ndarray):
-        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
 
-    def fun_a_2(self, fi: float | np.ndarray):
+    def fun_a_tolkatel(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.a_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.a_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
     def fun_d(self, fi: float | np.ndarray):
-        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0])
 
-    def fun_d_2(self, fi: float | np.ndarray):
+    def fun_d_tolkatel(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.d_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.d_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
     def fun_k(self, fi: float | np.ndarray):
-        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0])
+        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
 
-    def fun_k_2(self, fi: float | np.ndarray):
+    def fun_k_tolkatel(self, fi: float | np.ndarray):
         if type(fi) is np.ndarray:
-            return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
+            return self.fun_universal(fi, self.profile_method_calculator.k_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
-        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [-1, -1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
+        return self.fun_universal(fi, self.profile_method_calculator.k_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * int(fi >= self.config.phi_1) * int(
             fi <= self.config.phi_4)
 
     def fun_x(self, fi: float | np.ndarray):
@@ -185,7 +185,7 @@ class Kulachok:
         self.kulachok_solve_flag = True
 
     def set_tolkatel_data(self, N: int = 1000):
-        self.tolkatel_data = set_graph_data([self.fun_h_2, self.fun_v_2, self.fun_a_2, self.fun_d_2, self.fun_k_2], self.config.omega, N = N)
+        self.tolkatel_data = set_graph_data([self.fun_h_tolkatel, self.fun_v_tolkatel, self.fun_a_tolkatel, self.fun_d_tolkatel, self.fun_k_tolkatel], self.config.omega, N = N)
         self.tolkatel_solve_flag = True
 
     def set_profile_data(self, N: int = 1000):
@@ -282,7 +282,6 @@ class Kulachok:
         phi = self.tolkatel_data.fi_list_rad
         h = self.tolkatel_data.H_rad
         v = self.tolkatel_data.V_rad
-        # a = self.tolkatel_data.A_rad # Не используется в координатах, только в проверке
 
         # Геометрические параметры
         Rb = self.config.D * 1e3 / 2.0
@@ -290,16 +289,12 @@ class Kulachok:
 
         # 2. Расчет теоретического профиля (Траектория центра ролика)
         Rc = Rb + Rr + h
-
         xc = Rc * np.cos(phi)
         yc = Rc * np.sin(phi)
 
         # 3. Расчет действительного профиля
         # Производные координат центра ролика по углу phi
-        # Производная от (Rc * cos) -> Rc' * cos + Rc * (-sin) -> v * cos - Rc * sin
         dxc = v * np.cos(phi) - Rc * np.sin(phi)
-
-        # Производная от (Rc * sin) -> Rc' * sin + Rc * cos -> v * sin + Rc * cos
         dyc = v * np.sin(phi) + Rc * np.cos(phi)
 
         # Модуль вектора касательной
@@ -307,20 +302,9 @@ class Kulachok:
         norm_factor[norm_factor == 0] = 1e-9
 
         # Координаты конструктивного профиля
-        # Смещение на Rr внутрь кривой.
-        # Формулы смещения эквидистанты:
-        # xp = xc + Rr * dy / sqrt(...) * sign
-        # yp = yc - Rr * dx / sqrt(...) * sign
-        # Для внутреннего смещения (уменьшения радиуса) знаки обычно такие:
         xp = xc - Rr * (dyc / norm_factor)
         yp = yc + Rr * (dxc / norm_factor)
 
-        # Важно: В зависимости от направления обхода (CW/CCW) знаки могут инвертироваться.
-        # Если профиль "вывернется", попробуйте поменять знаки перед Rr на противоположные:
-        # xp = xc - Rr * ...
-        # yp = yc + Rr * ...
-        # Но для стандартной математики (CCW) текущий вариант должен быть верным,
-        # если мы хотим "уменьшить" профиль относительно центра ролика.
 
         self.profile_data = ProfileData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
                                        X=xp,
