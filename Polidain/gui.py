@@ -160,13 +160,46 @@ class CamConfiguratorApp(ctk.CTk):
         self.create_entry(self.frame_polidain, "pd_k4", "k_4 (агресс. зазор):", 2, 6)
 
         # Polinmail Fields
-        ctk.CTkLabel(self.frame_polinmail, text="Настройки Polinmail (Config 1)", font=("Arial", 16, "bold")).grid(
-            row=0, column=0, columnspan=2, pady=(10, 5), sticky="w")
-        self.create_entry(self.frame_polinmail, "pm_m", "Степень m (>=1):", 1, 1)
-        self.create_entry(self.frame_polinmail, "pm_d", "Разность d (>=1):", 1, 2)
-        self.create_entry(self.frame_polinmail, "pm_bc", "Граничные условия (через запятую):", "-1, 0, 0, 0, 0", 3)
+        # Use a tabview for the 4 configurations
+        self.pm_tabview = ctk.CTkTabview(self.frame_polinmail, height=300)
+        self.pm_tabview.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.pm_tabs = {}
+        for i in range(1, 5):
+            tab_name = f"Config {i}"
+            self.pm_tabs[i] = self.pm_tabview.add(tab_name)
+
+            # For configs 2, 3, 4 add a checkbox to enable/disable
+            if i > 1:
+                chk_var = ctk.BooleanVar(value=False)
+                chk = ctk.CTkCheckBox(self.pm_tabs[i], text="Использовать свой конфиг", variable=chk_var,
+                                      command=lambda idx=i: self.toggle_pm_config(idx))
+                chk.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
+                self.entries[f"pm_use_c{i}"] = chk # Store check widget to access state if needed, or variable
+                # We need to store variable to get value easily or just use widget.get()
+                # CTkCheckBox.get() returns 1 or 0.
+
+            # Fields
+            # Offset rows by 1 if there is a checkbox
+            start_row = 1 if i > 1 else 0
+
+            self.create_entry(self.pm_tabs[i], f"pm_m_{i}", "Степень m (>=1):", 1, start_row)
+            self.create_entry(self.pm_tabs[i], f"pm_d_{i}", "Разность d (>=1):", 1, start_row+1)
+            self.create_entry(self.pm_tabs[i], f"pm_bc_{i}", "Граничные условия:", "-1, 0, 0, 0, 0", start_row+2)
+
+            # Initial state for 2,3,4 is disabled
+            if i > 1:
+                self.toggle_pm_config(i)
 
         self.frame_polidain.pack(fill="both", expand=True)
+
+    def toggle_pm_config(self, idx):
+        # Check logic: if checked (1), enable fields. If unchecked (0), disable.
+        chk = self.entries[f"pm_use_c{idx}"]
+        state = "normal" if chk.get() == 1 else "disabled"
+        self.entries[f"pm_m_{idx}"].configure(state=state)
+        self.entries[f"pm_d_{idx}"].configure(state=state)
+        self.entries[f"pm_bc_{idx}"].configure(state=state)
 
     def update_method_visibility(self, choice):
         if choice == "polidain":
@@ -241,15 +274,27 @@ class CamConfiguratorApp(ctk.CTk):
                 "k_4": int(self.entries["pd_k4"].get()),
             }
         elif calc_type == 'polinmail':
-            bc_str = self.entries["pm_bc"].get()
-            bc_list = [float(x.strip()) for x in bc_str.split(",") if x.strip()]
-            calculator_config_data = {
-                "config_1": {
-                    "m": int(self.entries["pm_m"].get()),
-                    "d": int(self.entries["pm_d"].get()),
+            calculator_config_data = {}
+
+            # Helper to get config dict for index i
+            def get_pm_conf(i):
+                bc_str = self.entries[f"pm_bc_{i}"].get()
+                bc_list = [float(x.strip()) for x in bc_str.split(",") if x.strip()]
+                return {
+                    "m": int(self.entries[f"pm_m_{i}"].get()),
+                    "d": int(self.entries[f"pm_d_{i}"].get()),
                     "boundary_conditions": bc_list
                 }
-            }
+
+            # Config 1 is always present
+            calculator_config_data["config_1"] = get_pm_conf(1)
+
+            # Configs 2, 3, 4 only if checked
+            for i in range(2, 5):
+                if self.entries[f"pm_use_c{i}"].get() == 1:
+                     calculator_config_data[f"config_{i}"] = get_pm_conf(i)
+                else:
+                     calculator_config_data[f"config_{i}"] = None
 
         # Собираем все опции
         data = {
@@ -297,10 +342,23 @@ class CamConfiguratorApp(ctk.CTk):
             if geom_data["calculator_type"] == 'polidain':
                 calc_conf = PolidainConfig(**geom_data["calculator_config"])
             elif geom_data["calculator_type"] == 'polinmail':
-                 # PolinmailConfig ожидает LocalPolinmailConfig в config_1
-                 local_conf_data = geom_data["calculator_config"]["config_1"]
-                 local_conf = LocalPolinmailConfig(**local_conf_data)
-                 calc_conf = PolinmailConfig(config_1=local_conf)
+                 # Create PolinmailConfig with up to 4 local configs
+                 conf_kwargs = {}
+
+                 # Config 1
+                 c1_data = geom_data["calculator_config"]["config_1"]
+                 conf_kwargs["config_1"] = LocalPolinmailConfig(**c1_data)
+
+                 # Configs 2, 3, 4
+                 for i in range(2, 5):
+                     key = f"config_{i}"
+                     c_data = geom_data["calculator_config"].get(key)
+                     if c_data:
+                         conf_kwargs[key] = LocalPolinmailConfig(**c_data)
+                     else:
+                         conf_kwargs[key] = None
+
+                 calc_conf = PolinmailConfig(**conf_kwargs)
 
             cam_geom_opts = CamGeometryOptions(
                 calculator_type=geom_data["calculator_type"],
@@ -407,14 +465,33 @@ class CamConfiguratorApp(ctk.CTk):
                         self.entries[entry_key].delete(0, 'end')
                         self.entries[entry_key].insert(0, str(calc_conf[key]))
             elif calc_type == 'polinmail':
-                conf_1 = calc_conf.get("config_1", {})
-                if "m" in conf_1: self.entries["pm_m"].delete(0, 'end'); self.entries["pm_m"].insert(0, str(conf_1["m"]))
-                if "d" in conf_1: self.entries["pm_d"].delete(0, 'end'); self.entries["pm_d"].insert(0, str(conf_1["d"]))
-                if "boundary_conditions" in conf_1:
-                    bc_list = conf_1["boundary_conditions"]
-                    bc_str = ", ".join(map(str, bc_list))
-                    self.entries["pm_bc"].delete(0, 'end')
-                    self.entries["pm_bc"].insert(0, bc_str)
+                for i in range(1, 5):
+                    conf_key = f"config_{i}"
+                    conf_data = calc_conf.get(conf_key)
+
+                    if i > 1:
+                        chk = self.entries[f"pm_use_c{i}"]
+                        if conf_data:
+                            chk.select()
+                            self.toggle_pm_config(i)
+                        else:
+                            chk.deselect()
+                            self.toggle_pm_config(i)
+                            continue # Skip filling fields if None
+
+                    if not conf_data: continue
+
+                    if "m" in conf_data:
+                        self.entries[f"pm_m_{i}"].delete(0, 'end')
+                        self.entries[f"pm_m_{i}"].insert(0, str(conf_data["m"]))
+                    if "d" in conf_data:
+                        self.entries[f"pm_d_{i}"].delete(0, 'end')
+                        self.entries[f"pm_d_{i}"].insert(0, str(conf_data["d"]))
+                    if "boundary_conditions" in conf_data:
+                        bc_list = conf_data["boundary_conditions"]
+                        bc_str = ", ".join(map(str, bc_list))
+                        self.entries[f"pm_bc_{i}"].delete(0, 'end')
+                        self.entries[f"pm_bc_{i}"].insert(0, bc_str)
 
             # --- PlotterOptions ---
             plot = data.get("plotter_options", {})
