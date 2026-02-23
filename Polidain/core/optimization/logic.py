@@ -12,6 +12,22 @@ from core.profiling_methods.polidain import PolidainCalculator
 from core.profils import ProfileDataExtractor
 
 def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, optimize_config = None):
+    """
+    Целевая функция оптимизации (минимизируемая функция).
+    Рассчитывает отклонение профиля кулачка с параметрами x от целевого профиля R_func.
+
+    Args:
+        x: Вектор варьируемых параметров [z, f_pod, f_v, f_op, f_z, k_1, k_2, k_3, k_4].
+        fi_list: Массив углов для расчета отклонения.
+        m: Степень полинома m.
+        d: Степень полинома d.
+        R_func: Целевая функция профиля (callable), возвращающая радиус-вектор от угла.
+        optimize_config: Конфигурация оптимизации (базовые параметры кулачка).
+
+    Returns:
+        float: Сумма модулей разности между рассчитанным и целевым профилем.
+               В случае ошибки расчета возвращает большое число (1e6).
+    """
     z = x[0]  # Тепловой зазор (мм)
     f_pod = x[1]  # Фаза подъёма (град)
     f_v = x[2] # Фаза выдержки (град)
@@ -50,6 +66,19 @@ def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, op
         return 1e6
 
 def differential_evolution_optimization(m, d, optimize_config, R_func, differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N = 1000):
+    """
+    Запускает дифференциальную эволюцию для поиска оптимальных параметров кулачка.
+    Фиксирует m и d, варьирует остальные параметры в пределах bounds_config.
+
+    Args:
+        m: Степень полинома m.
+        d: Степень полинома d.
+        optimize_config: Конфигурация оптимизации.
+        R_func: Целевая функция профиля.
+        differential_evolution_config: Настройки алгоритма дифференциальной эволюции.
+        bounds_config: Границы изменения параметров.
+        N: Количество точек для сравнения профилей.
+    """
     if differential_evolution_config is None:
         differential_evolution_config = DifferentialEvolutionConfig()
     if bounds_config is None:
@@ -71,6 +100,17 @@ def differential_evolution_optimization(m, d, optimize_config, R_func, different
     print("Function value:", result.fun)
 
 def gibrid_optimization(gibrid_optimization_config: GibridOptimizationConfig, optimize_config: OptimizeConfig, R_func: Callable[[np.ndarray], np.ndarray], differential_evolution_config: DifferentialEvolutionConfig | None = None, bounds_config: BoundsConfig | None = None, N: int = 1000):
+    """
+    Гибридная оптимизация: перебор значений m и d, и для каждой пары запуск дифференциальной эволюции.
+
+    Args:
+        gibrid_optimization_config: Конфигурация с перечнем m и d для перебора.
+        optimize_config: Конфигурация оптимизации.
+        R_func: Целевая функция профиля.
+        differential_evolution_config: Настройки DE.
+        bounds_config: Границы параметров.
+        N: Количество точек.
+    """
     for i in gibrid_optimization_config.m:
         for j in gibrid_optimization_config.d:
             print("m:", i, "d:", j)

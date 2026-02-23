@@ -3,11 +3,16 @@ from core.profiling_methods.base import BaseCalculator
 
 def k_fun(p, m, d):
     """
-        :param m: Младшая степень полинома
-        :param p: Степень второго члена полинома
-        :param d: Разность между степенями членов полинома
-        :return: [m, p, q, r, s] - массив степеней членов полинома
-        """
+    Вычисляет степени членов полинома.
+
+    Args:
+        p: Степень второго члена полинома.
+        m: Младшая степень полинома.
+        d: Разность между степенями членов полинома.
+
+    Returns:
+        list: [m, p, q, r, s] - массив степеней членов полинома.
+    """
     q = p + p - d
     r = q + p - d
     s = r + p - d
@@ -15,10 +20,15 @@ def k_fun(p, m, d):
 
 def c_fun(p, m, d):
     """
-    :param m: Младшая степень полинома
-    :param p: Степень второго члена полинома
-    :param d: Разность между степенями членов полинома
-    :return: [C2, Cp, Cq, Cr, Cs] - массив коэффициентов при членах полиномма
+    Вычисляет коэффициенты полинома.
+
+    Args:
+        p: Степень второго члена полинома.
+        m: Младшая степень полинома.
+        d: Разность между степенями членов полинома.
+
+    Returns:
+        list: [C2, Cp, Cq, Cr, Cs] - массив коэффициентов при членах полинома.
     """
     temp = k_fun(p, m, d)
     q = temp[2]
@@ -32,15 +42,20 @@ def c_fun(p, m, d):
     return [C2, Cp, Cq, Cr, Cs]
 
 def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''
-    Функция радиуса кулачка от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
+    """
+    Вычисляет значение перемещения кулачка (высоту подъема).
+
+    Args:
+        fi: Текущий угол поворота кулачка.
+        C_list: Массив коэффициентов при членах полинома.
+        k_list: Массив степеней членов полинома.
+        fi_1: Конечный угол характерного участка.
+        fi_0: Начальный угол характерного участка.
+        h_kn_max: Максимальная высота подъема кулачка на участке.
+
+    Returns:
+        float: Значение перемещения.
+    """
     temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 0 < 0:
@@ -50,14 +65,20 @@ def h_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
 
 
 def v_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция скорости от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
+    """
+    Вычисляет аналог скорости (первая производная перемещения).
+
+    Args:
+        fi: Текущий угол поворота кулачка.
+        C_list: Массив коэффициентов при членах полинома.
+        k_list: Массив степеней членов полинома.
+        fi_1: Конечный угол характерного участка.
+        fi_0: Начальный угол характерного участка.
+        h_kn_max: Максимальная высота подъема кулачка на участке.
+
+    Returns:
+        float: Значение аналога скорости.
+    """
     temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 1 < 0:
@@ -67,14 +88,20 @@ def v_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
 
 
 def a_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция ускорения от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
+    """
+    Вычисляет аналог ускорения (вторая производная перемещения).
+
+    Args:
+        fi: Текущий угол поворота кулачка.
+        C_list: Массив коэффициентов при членах полинома.
+        k_list: Массив степеней членов полинома.
+        fi_1: Конечный угол характерного участка.
+        fi_0: Начальный угол характерного участка.
+        h_kn_max: Максимальная высота подъема кулачка на участке.
+
+    Returns:
+        float: Значение аналога ускорения.
+    """
     temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 2 < 0:
@@ -83,14 +110,20 @@ def a_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
     return temp * h_kn_max
 
 def d_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция рывка от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
+    """
+    Вычисляет аналог рывка (третья производная перемещения).
+
+    Args:
+        fi: Текущий угол поворота кулачка.
+        C_list: Массив коэффициентов при членах полинома.
+        k_list: Массив степеней членов полинома.
+        fi_1: Конечный угол характерного участка.
+        fi_0: Начальный угол характерного участка.
+        h_kn_max: Максимальная высота подъема кулачка на участке.
+
+    Returns:
+        float: Значение аналога рывка.
+    """
     temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 3 < 0:
@@ -100,14 +133,20 @@ def d_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
     return temp * h_kn_max
 
 def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
-    '''Функция кракена от угла поворота кулачка
-    :param fi: Угол поворота кулачка
-    :param C_list:Массив коэффициентов при членах полиномма
-    :param k_list:Массив степеней членов полинома
-    :param fi_1:Конец характерного участка
-    :param fi_0:Начало характерного участка
-    :param h_kn_max: максимальная высота подёма кулачка на характерном участке
-    '''
+    """
+    Вычисляет четвертую производную перемещения.
+
+    Args:
+        fi: Текущий угол поворота кулачка.
+        C_list: Массив коэффициентов при членах полинома.
+        k_list: Массив степеней членов полинома.
+        fi_1: Конечный угол характерного участка.
+        fi_0: Начальный угол характерного участка.
+        h_kn_max: Максимальная высота подъема кулачка на участке.
+
+    Returns:
+        float: Значение четвертой производной.
+    """
     temp = 0
     for i in range(0, len(C_list)):
         if k_list[i] - 4 < 0:
@@ -117,7 +156,19 @@ def k_phi(fi, C_list, k_list, fi_1, fi_0, h_kn_max):
     return temp * h_kn_max
 
 class PolidainCalculator(BaseCalculator):
+    """
+    Калькулятор профиля методом Polidain (полиномиальная аппроксимация).
+    Использует полиномы высоких степеней для обеспечения гладкости функций.
+    """
+
     def __init__(self, config: PolidainConfig):
+        """
+        Инициализация калькулятора.
+        Предварительно рассчитывает коэффициенты полиномов для всех участков.
+
+        Args:
+            config: Конфигурация Polidain.
+        """
         BaseCalculator.__init__(self, config)
 
         self.c_list_1: list[float] = c_fun(self.config.k_1, self.config.m, self.config.d)
@@ -138,26 +189,43 @@ class PolidainCalculator(BaseCalculator):
         }
 
     def segment_selection(self, segment_number: int):
+        """
+        Выбирает коэффициенты и степени полинома для заданного участка.
+
+        Args:
+            segment_number: Номер участка.
+
+        Returns:
+            Tuple[list[float], list[int]]: Кортеж (список коэффициентов, список степеней).
+
+        Raises:
+            ValueError: Если участок не настроен.
+        """
         if segment_number not in self._segments:
             raise ValueError(f'Участок {segment_number} не настроен')
         return self._segments[segment_number]
 
     def h_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
+        """См. BaseCalculator.h_phi"""
         c_list, k_list = self.segment_selection(segment_number)
         return h_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)
 
     def v_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
+        """См. BaseCalculator.v_phi"""
         c_list, k_list = self.segment_selection(segment_number)
         return v_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)
 
     def a_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
+        """См. BaseCalculator.a_phi"""
         c_list, k_list = self.segment_selection(segment_number)
         return a_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)
 
     def d_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
+        """См. BaseCalculator.d_phi"""
         c_list, k_list = self.segment_selection(segment_number)
         return d_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)
 
     def k_phi(self, fi: float, fi_1: float, fi_0: float, h_kn_max: float, segment_number: int):
+        """См. BaseCalculator.k_phi"""
         c_list, k_list = self.segment_selection(segment_number)
         return k_phi(fi, c_list, k_list, fi_1, fi_0, h_kn_max)

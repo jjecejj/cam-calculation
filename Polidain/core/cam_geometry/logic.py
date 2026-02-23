@@ -6,19 +6,37 @@ from core.cam_geometry.schemas import GraphData, ProfileData, set_graph_data, se
 from scipy.interpolate import interp1d
 
 class CamProfileError(Exception):
-    """Базовый класс для ошибок профиля кулачка"""
+    """Базовый класс для ошибок профиля кулачка."""
+    pass
 
 class PusherDiameterError(CamProfileError):
-    """Ошибка: недостаточный диаметр толкателя"""
+    """Ошибка: недостаточный диаметр толкателя."""
+    pass
 
 class ProfileSmoothnessError(CamProfileError):
-    """Ошибка: негладкий профиль (подрез профиля)"""
+    """Ошибка: негладкий профиль (подрез профиля)."""
+    pass
 
 class SolvePreliminaryCalculations(CamProfileError):
-    """Ошибка: Не были проведены необходимые вычисления"""
+    """Ошибка: Не были проведены необходимые вычисления."""
+    pass
 
 class Kulachok:
+    """
+    Класс, отвечающий за расчет геометрии кулачка и кинематики толкателя.
+    Использует выбранный метод профилирования (Calculator) для расчета базовых законов движения,
+    а затем преобразует их в профиль кулачка в зависимости от типа толкателя.
+    """
+
     def __init__(self, config: KulachokConfig, profile_method_calculator: BaseCalculator):
+        """
+        Инициализация объекта Кулачок.
+
+        Args:
+            config: Конфигурация геометрических параметров кулачка.
+            profile_method_calculator: Экземпляр калькулятора (Polidain, Polinmail и др.)
+                                       для расчета кинематических функций.
+        """
         self.config = config
         self.profile_method_calculator = profile_method_calculator
 
@@ -34,9 +52,19 @@ class Kulachok:
 
     def fun_universal(self, fi: float | np.ndarray, fun: Callable, sign_list: List[int],
                       const_list: List[float]) -> float | np.ndarray:
-        '''
-        Универсальная функция поддерживающая numpy, вычислчющая fun на всех участках
-        '''
+        """
+        Универсальная функция для вычисления значений кинематических параметров на всех участках цикла.
+        Поддерживает работу как с одиночными значениями, так и с массивами numpy.
+
+        Args:
+            fi: Угол поворота (или массив углов).
+            fun: Функция калькулятора (например, h_phi, v_phi), которую нужно вызвать.
+            sign_list: Список знаков (множителей) для каждого из 4-х рабочих участков.
+            const_list: Список констант смещения для участков (включая участки покоя).
+
+        Returns:
+            Вычисленное значение (или массив значений).
+        """
 
         fi_arr = np.asarray(fi)
 
@@ -112,6 +140,7 @@ class Kulachok:
         return result
 
     def fun_h(self, fi: float | np.ndarray):
+        """Функция перемещения для кулачка (всей системы)."""
         return self.fun_universal(fi, self.profile_method_calculator.h_phi, [1, 1, 1, 1], [self.config.r0 - self.config.z,
                                                                 self.config.r0,
                                                                 self.config.r0 + self.config.h,
@@ -120,6 +149,7 @@ class Kulachok:
                                                                 self.config.r0 - self.config.z])
 
     def fun_h_tolkatel(self, fi: float | np.ndarray):
+        """Функция перемещения толкателя (только рабочий ход)."""
         if type(fi) is np.ndarray:
             return (self.fun_universal(fi, self.profile_method_calculator.h_phi, [1, 1, 1, 1], [self.config.r0 - self.config.z,
                                                                 self.config.r0,
@@ -135,9 +165,11 @@ class Kulachok:
                                                                 self.config.r0 - self.config.z]) - self.config.r0) * int(fi >= self.config.phi_1) * int(fi <= self.config.phi_4)
 
     def fun_v(self, fi: float | np.ndarray):
+        """Функция аналога скорости для кулачка."""
         return self.fun_universal(fi, self.profile_method_calculator.v_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0])
 
     def fun_v_tolkatel(self, fi: float | np.ndarray):
+        """Функция аналога скорости для толкателя."""
         if type(fi) is np.ndarray:
             return self.fun_universal(fi, self.profile_method_calculator.v_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
@@ -145,9 +177,11 @@ class Kulachok:
             fi <= self.config.phi_4)
 
     def fun_a(self, fi: float | np.ndarray):
+        """Функция аналога ускорения для кулачка."""
         return self.fun_universal(fi, self.profile_method_calculator.a_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
 
     def fun_a_tolkatel(self, fi: float | np.ndarray):
+        """Функция аналога ускорения для толкателя."""
         if type(fi) is np.ndarray:
             return self.fun_universal(fi, self.profile_method_calculator.a_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
@@ -155,9 +189,11 @@ class Kulachok:
             fi <= self.config.phi_4)
 
     def fun_d(self, fi: float | np.ndarray):
+        """Функция аналога рывка для кулачка."""
         return self.fun_universal(fi, self.profile_method_calculator.d_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0])
 
     def fun_d_tolkatel(self, fi: float | np.ndarray):
+        """Функция аналога рывка для толкателя."""
         if type(fi) is np.ndarray:
             return self.fun_universal(fi, self.profile_method_calculator.d_phi, [1, 1, -1, -1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
@@ -165,9 +201,11 @@ class Kulachok:
             fi <= self.config.phi_4)
 
     def fun_k(self, fi: float | np.ndarray):
+        """Функция четвертой производной для кулачка."""
         return self.fun_universal(fi, self.profile_method_calculator.k_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0])
 
     def fun_k_tolkatel(self, fi: float | np.ndarray):
+        """Функция четвертой производной для толкателя."""
         if type(fi) is np.ndarray:
             return self.fun_universal(fi, self.profile_method_calculator.k_phi, [1, 1, 1, 1], [0, 0, 0, 0, 0, 0]) * np.int64(
                 fi >= self.config.phi_1) * np.int64(fi <= self.config.phi_4)
@@ -175,25 +213,52 @@ class Kulachok:
             fi <= self.config.phi_4)
 
     def fun_x(self, fi: float | np.ndarray):
+        """Вычисляет X координату профиля (для остроконечного толкателя)."""
         return self.fun_h(fi) * np.cos(fi)
 
     def fun_y(self, fi: float | np.ndarray):
+        """Вычисляет Y координату профиля (для остроконечного толкателя)."""
         return self.fun_h(fi) * np.sin(fi)
 
     def set_kulachok_data(self, N: int = 1000):
+        """
+        Формирует данные графиков для кулачка (весь цикл 360).
+
+        Args:
+            N: Количество точек.
+        """
         self.kulachok_data = set_graph_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega, N = N)
         self.kulachok_solve_flag = True
 
     def set_tolkatel_data(self, N: int = 1000):
+        """
+        Формирует данные графиков для толкателя (рабочий ход).
+
+        Args:
+            N: Количество точек.
+        """
         self.tolkatel_data = set_graph_data([self.fun_h_tolkatel, self.fun_v_tolkatel, self.fun_a_tolkatel, self.fun_d_tolkatel, self.fun_k_tolkatel], self.config.omega, N = N)
         self.tolkatel_solve_flag = True
 
     def set_profile_data(self, N: int = 1000):
+        """
+        Формирует профиль для остроконечного толкателя.
+
+        Args:
+            N: Количество точек.
+        """
         self.profile_data = set_profile_data([self.fun_x, self.fun_y], N = N)
         self.profile_solve_flag = True
         self.tolkatel_solve_type = "thin"
 
     def solve(self, kulachok_type: Literal['thin', 'flat', 'roller'] = 'thin', N: int = 1000):
+        """
+        Выполняет полный расчет кинематики и профиля.
+
+        Args:
+            kulachok_type: Тип толкателя ('thin' - остроконечный, 'flat' - тарельчатый, 'roller' - роликовый).
+            N: Количество точек для расчета.
+        """
         self.set_tolkatel_data(N = N)
         self.set_kulachok_data(N = N)
         if kulachok_type == 'thin':
@@ -204,6 +269,17 @@ class Kulachok:
             self.set_profile_roller()
 
     def profile_flat_check(self, curvature_flag: bool = True):
+        """
+        Проверяет возможность построения профиля для тарельчатого толкателя (проверка на подрез).
+
+        Args:
+            curvature_flag: Если True, выбрасывает исключение при отрицательной кривизне.
+
+        Raises:
+            SolvePreliminaryCalculations: Если данные толкателя еще не рассчитаны.
+            PusherDiameterError: Если диаметр толкателя недостаточен.
+            ProfileSmoothnessError: Если профиль имеет подрезы (отрицательную кривизну).
+        """
         if not(self.kulachok_solve_flag and self.tolkatel_solve_flag):
             raise SolvePreliminaryCalculations(f"Не были проведены предварительные вычисления закона движения толкатиля")
 
@@ -222,6 +298,9 @@ class Kulachok:
             )
 
     def set_profile_flat(self):
+        """
+        Рассчитывает профиль кулачка для плоского (тарельчатого) толкателя.
+        """
         # Проверка возможности построения профиля для заданного закона движения толкателя
         self.profile_flat_check()
 
@@ -251,6 +330,12 @@ class Kulachok:
         self.tolkatel_solve_type = "flat"
 
     def profile_roller_check(self):
+        """
+        Проверяет возможность построения профиля для роликового толкателя.
+
+        Raises:
+            ProfileSmoothnessError: Если обнаружен подрез профиля.
+        """
         h = self.tolkatel_data.H_rad
         v = self.tolkatel_data.V_rad
         a = self.tolkatel_data.A_rad
@@ -271,9 +356,7 @@ class Kulachok:
 
     def set_profile_roller(self):
         """
-        Рассчитывает профиль кулачка на основе конфигурации и кинематических данных.
-        ИСПРАВЛЕНО: Приведено к стандартной полярной системе (X = cos, Y = sin)
-        для совместимости с анимацией.
+        Рассчитывает профиль кулачка для роликового толкателя.
         """
 
         self.profile_roller_check()
