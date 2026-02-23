@@ -137,6 +137,17 @@ class CamConfiguratorApp(ctk.CTk):
         else:
             self.entries["dxf_name"].configure(state="disabled")
 
+    def toggle_anim_params(self):
+        """
+        Блокирует полей в зависмостей от чекбокс показать анимацию
+        """
+        if self.anim_display.get() == 1 or self.anim_together == 1:
+            self.anim_save.configure(state="normal")
+            self.anim_pause.configure(state="normal")
+        elif self.anim_display.get() == 0 and self.anim_together == 0:
+            self.anim_save.configure(state="disabled")
+            self.anim_pause.configure(state="disabled")
+
     # --- ИНИЦИАЛИЗАЦИЯ ВКЛАДОК ---
     def init_geometry_tab(self):
         """
@@ -282,10 +293,10 @@ class CamConfiguratorApp(ctk.CTk):
         """
         Инициализирует элементы управления на вкладке 'Анимация'.
         """
-        self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию")
+        self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию", command=self.toggle_anim_params)
         self.anim_display.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.anim_together = ctk.CTkCheckBox(self.tab_anim, text="Анимация с графиками")
+        self.anim_together = ctk.CTkCheckBox(self.tab_anim, text="Анимация с графиками", command=self.toggle_anim_params)
         self.anim_together.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
         self.anim_save = ctk.CTkCheckBox(self.tab_anim, text="Сохранить анимацию")
