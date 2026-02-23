@@ -30,7 +30,14 @@ ctk.set_default_color_theme("blue")
 
 
 class CamConfiguratorApp(ctk.CTk):
+    """
+    Основной класс GUI приложения для конфигурации расчета кулачка.
+    Наследуется от customtkinter.CTk.
+    """
     def __init__(self):
+        """
+        Инициализация приложения, создание окна, вкладок и панелей.
+        """
         super().__init__()
 
         self.title("Конфигуратор решателя кулачка")
@@ -77,6 +84,17 @@ class CamConfiguratorApp(ctk.CTk):
         self.btn_gen.pack(side="left", padx=10, expand=True, fill="x")
 
     def create_entry(self, parent, key, label_text, default_val, row, col=0):
+        """
+        Создает виджет ввода (Entry) с меткой (Label) и добавляет его в словарь entries.
+
+        Args:
+            parent: Родительский виджет.
+            key: Ключ для словаря entries.
+            label_text: Текст метки.
+            default_val: Значение по умолчанию.
+            row: Номер строки в сетке.
+            col: Номер колонки (блока) в сетке.
+        """
         ctk.CTkLabel(parent, text=label_text).grid(row=row, column=col * 2, padx=10, pady=5, sticky="w")
         entry = ctk.CTkEntry(parent, width=150)
         entry.insert(0, str(default_val))
@@ -85,14 +103,21 @@ class CamConfiguratorApp(ctk.CTk):
 
     # --- ФУНКЦИИ БЛОКИРОВКИ ПОЛЕЙ ---
     def toggle_initial_angle(self):
-        """Блокирует поле 'Начальный угол', если включен авторассчет"""
+        """
+        Блокирует или разблокирует поле 'Начальный угол' в зависимости от состояния чекбокса авторассчета.
+        """
         if self.geom_opt_angle.get() == 1:
             self.entries["geom_angle"].configure(state="disabled")
         else:
             self.entries["geom_angle"].configure(state="normal")
 
     def update_follower_params(self, choice):
-        """Блокирует параметры толкателя в зависимости от его типа"""
+        """
+        Блокирует или разблокирует поля параметров толкателя (диаметр, радиус) в зависимости от выбранного типа.
+
+        Args:
+            choice: Выбранный тип толкателя ('thin', 'flat', 'roller').
+        """
         if choice == 'thin':
             self.entries["k_Dt"].configure(state="disabled")
             self.entries["k_Rr"].configure(state="disabled")
@@ -104,7 +129,9 @@ class CamConfiguratorApp(ctk.CTk):
             self.entries["k_Rr"].configure(state="normal")
 
     def toggle_dxf_name(self):
-        """Блокирует поле имени DXF, если экспорт выключен"""
+        """
+        Блокирует или разблокирует поле имени DXF файла в зависимости от чекбокса экспорта.
+        """
         if self.dxf_import.get() == 1:
             self.entries["dxf_name"].configure(state="normal")
         else:
@@ -112,6 +139,9 @@ class CamConfiguratorApp(ctk.CTk):
 
     # --- ИНИЦИАЛИЗАЦИЯ ВКЛАДОК ---
     def init_geometry_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'Общие'.
+        """
         ctk.CTkLabel(self.tab_geom, text="Тип метода:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
         self.geom_calc_type = ctk.CTkOptionMenu(self.tab_geom, values=['polidain', 'polinmail'],
                                                 command=self.update_method_visibility)
@@ -131,6 +161,9 @@ class CamConfiguratorApp(ctk.CTk):
         self.geom_opt_angle.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
     def init_kulachok_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'Кулачок'.
+        """
         self.create_entry(self.tab_kulachok, "k_Nk", "Обороты в минуту (N_k):", 100, 0)
         self.create_entry(self.tab_kulachok, "k_D", "Базовый диаметр (D):", 0.05, 1)
         self.create_entry(self.tab_kulachok, "k_h", "Макс. перемещение (h):", 0.02, 2)
@@ -144,6 +177,10 @@ class CamConfiguratorApp(ctk.CTk):
         self.create_entry(self.tab_kulachok, "k_fz", "Фаза зазора (рад):", 0.1, 3, col=1)
 
     def init_method_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'Метод расчета'.
+        Создает фреймы для настроек Polidain и Polinmail.
+        """
         self.frame_polidain = ctk.CTkFrame(self.tab_method, fg_color="transparent")
         self.frame_polinmail = ctk.CTkFrame(self.tab_method, fg_color="transparent")
 
@@ -194,6 +231,12 @@ class CamConfiguratorApp(ctk.CTk):
         self.frame_polidain.pack(fill="both", expand=True)
 
     def toggle_pm_config(self, idx):
+        """
+        Включает или отключает поля настройки для конкретного конфига Polinmail.
+
+        Args:
+            idx: Индекс конфигурации (2, 3, 4).
+        """
         # Check logic: if checked (1), enable fields. If unchecked (0), disable.
         chk = self.entries[f"pm_use_c{idx}"]
         state = "normal" if chk.get() == 1 else "disabled"
@@ -202,6 +245,12 @@ class CamConfiguratorApp(ctk.CTk):
         self.entries[f"pm_bc_{idx}"].configure(state=state)
 
     def update_method_visibility(self, choice):
+        """
+        Переключает видимость фреймов настроек в зависимости от выбранного метода расчета.
+
+        Args:
+            choice: Выбранный метод ('polidain' или 'polinmail').
+        """
         if choice == "polidain":
             self.frame_polinmail.pack_forget()
             self.frame_polidain.pack(fill="both", expand=True)
@@ -210,6 +259,9 @@ class CamConfiguratorApp(ctk.CTk):
             self.frame_polinmail.pack(fill="both", expand=True)
 
     def init_plotter_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'Графики'.
+        """
         self.plot_tolkatel = ctk.CTkCheckBox(self.tab_plot, text="Графики толкателя")
         self.plot_tolkatel.pack(padx=20, pady=10, anchor="w")
 
@@ -227,6 +279,9 @@ class CamConfiguratorApp(ctk.CTk):
         self.plot_arg_type.pack(padx=20, pady=5, anchor="w")
 
     def init_animation_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'Анимация'.
+        """
         self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию")
         self.anim_display.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
@@ -248,6 +303,9 @@ class CamConfiguratorApp(ctk.CTk):
         self.anim_arg_type.grid(row=3, column=3, padx=10, pady=10)
 
     def init_dxf_tab(self):
+        """
+        Инициализирует элементы управления на вкладке 'DXF Экспорт'.
+        """
         self.dxf_import = ctk.CTkCheckBox(self.tab_dxf, text="Экспортировать в DXF", command=self.toggle_dxf_name)
         self.dxf_import.grid(row=0, column=0, columnspan=2, padx=10, pady=20, sticky="w")
 
@@ -259,8 +317,11 @@ class CamConfiguratorApp(ctk.CTk):
 
     def get_current_data_dict(self) -> Dict[str, Any]:
         """
-        Собирает данные из виджетов и формирует словарь,
-        структурно совпадающий с CamSolveOptions (и вложенными моделями).
+        Собирает данные из виджетов интерфейса и формирует словарь конфигурации.
+        Этот словарь соответствует структуре Pydantic моделей для настроек решателя.
+
+        Returns:
+            Dict[str, Any]: Словарь с собранными параметрами.
         """
         calc_type = self.geom_calc_type.get()
 
@@ -349,6 +410,11 @@ class CamConfiguratorApp(ctk.CTk):
         return data
 
     def generate_config(self):
+        """
+        Вызывается при нажатии кнопки 'Сформировать конфиг'.
+        Собирает данные, создает объекты конфигурации Pydantic и запускает расчет кулачка.
+        В случае ошибок валидации выводит сообщение пользователю.
+        """
         try:
             data = self.get_current_data_dict()
 
@@ -424,6 +490,10 @@ class CamConfiguratorApp(ctk.CTk):
             messagebox.showerror("Ошибка", str(e))
 
     def save_to_json(self):
+        """
+        Сохраняет текущую конфигурацию в JSON файл.
+        Открывает диалоговое окно для выбора пути сохранения.
+        """
         try:
             data = self.get_current_data_dict()
             filepath = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
@@ -435,6 +505,10 @@ class CamConfiguratorApp(ctk.CTk):
             messagebox.showerror("Ошибка сохранения", str(e))
 
     def load_from_json(self):
+        """
+        Загружает конфигурацию из JSON файла.
+        Открывает диалоговое окно для выбора файла, затем заполняет все виджеты значениями из файла.
+        """
         filepath = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
         if not filepath:
             return
