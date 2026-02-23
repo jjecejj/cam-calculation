@@ -229,7 +229,23 @@ class CamConfiguratorApp(ctk.CTk):
     def init_animation_tab(self):
         self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию")
         self.anim_display.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.anim_together = ctk.CTkCheckBox(self.tab_anim, text="Анимация с графиками")
+        self.anim_together.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+
+        self.anim_save = ctk.CTkCheckBox(self.tab_anim, text="Сохранить анимацию")
+        self.anim_save.grid(row=2, column=0, padx=10, pady=10, sticky="w")
+
+        self.anim_pause = ctk.CTkCheckBox(self.tab_anim, text="Поддержка паузы")
+        self.anim_pause.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+
         self.create_entry(self.tab_anim, "anim_int", "Интервал (мс):", 50, 0, col=1)
+        self.create_entry(self.tab_anim, "anim_prof_name", "Имя файла профиля:", "animation_profile", 1, col=1)
+        self.create_entry(self.tab_anim, "anim_dash_name", "Имя файла дашборда:", "animation_dashboard", 2, col=1)
+
+        ctk.CTkLabel(self.tab_anim, text="Аргумент анимации:").grid(row=3, column=2, padx=10, pady=10, sticky="w")
+        self.anim_arg_type = ctk.CTkOptionMenu(self.tab_anim, values=['degree', 'rad', 't'])
+        self.anim_arg_type.grid(row=3, column=3, padx=10, pady=10)
 
     def init_dxf_tab(self):
         self.dxf_import = ctk.CTkCheckBox(self.tab_dxf, text="Экспортировать в DXF", command=self.toggle_dxf_name)
@@ -316,7 +332,13 @@ class CamConfiguratorApp(ctk.CTk):
             },
             "rotate_animation_options": {
                 "display_animation_flag": bool(self.anim_display.get()),
+                "animation_profile_and_graphs_together_flag": bool(self.anim_together.get()),
+                "save_animation_flag": bool(self.anim_save.get()),
                 "animation_intarval": int(self.entries["anim_int"].get()),
+                "profile_animation_name_file": self.entries["anim_prof_name"].get(),
+                "dashboard_animation_name_file": self.entries["anim_dash_name"].get(),
+                "animation_graphs_argument_type": self.anim_arg_type.get(),
+                "animation_pause_flag": bool(self.anim_pause.get()),
             },
             "dxf_creator_options": {
                 "import_dxf_flag": bool(self.dxf_import.get()),
@@ -514,9 +536,29 @@ class CamConfiguratorApp(ctk.CTk):
             if anim.get("display_animation_flag"): self.anim_display.select()
             else: self.anim_display.deselect()
 
+            if anim.get("animation_profile_and_graphs_together_flag"): self.anim_together.select()
+            else: self.anim_together.deselect()
+
+            if anim.get("save_animation_flag"): self.anim_save.select()
+            else: self.anim_save.deselect()
+
+            if anim.get("animation_pause_flag"): self.anim_pause.select()
+            else: self.anim_pause.deselect()
+
             if "animation_intarval" in anim:
                 self.entries["anim_int"].delete(0, 'end')
                 self.entries["anim_int"].insert(0, str(anim["animation_intarval"]))
+
+            if "profile_animation_name_file" in anim:
+                self.entries["anim_prof_name"].delete(0, 'end')
+                self.entries["anim_prof_name"].insert(0, str(anim["profile_animation_name_file"]))
+
+            if "dashboard_animation_name_file" in anim:
+                self.entries["anim_dash_name"].delete(0, 'end')
+                self.entries["anim_dash_name"].insert(0, str(anim["dashboard_animation_name_file"]))
+
+            if "animation_graphs_argument_type" in anim:
+                self.anim_arg_type.set(anim["animation_graphs_argument_type"])
 
             # --- DxfCreatorOptions ---
             dxf = data.get("dxf_creator_options", {})
