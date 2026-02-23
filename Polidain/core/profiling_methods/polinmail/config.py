@@ -44,7 +44,7 @@ class PolinmailConfig(MethodConfig):
 default_local_polinmail_config = LocalPolinmailConfig(
     m = 5,
     d = 1,
-    boundary_conditions = [-1, 0, 0, 0, 0]
+    boundary_conditions = [1, 0, 0, 0, 0]
 )
 
 default_polinmail_config = PolinmailConfig(

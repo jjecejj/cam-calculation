@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
-from vizualization.plotter import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, display_profile
+from vizualization.plotter import display_all, display_graphs_tolkatel, display_graphs_kulachok, display_profile
 
 
 class PlotterOptions(BaseModel):
@@ -31,11 +31,11 @@ class PlotterOptions(BaseModel):
 def resolve_plotter_options(config: PlotterOptions, kulachok: Kulachok, initial_angle: float):
     if config.profile_and_graphs_together_flag:
         if config.graphs_kulachok_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
+            display_all(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
                               target='kulachok')
 
         if config.graphs_tolkatel_flag:
-            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
+            display_all(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
                               target='tolkatel')
 
     else:

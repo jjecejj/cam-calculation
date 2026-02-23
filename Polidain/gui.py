@@ -202,10 +202,10 @@ class CamConfiguratorApp(ctk.CTk):
                                                                                                       sticky="w")
         self.create_entry(self.frame_polidain, "pd_m", "Степень m (>=2):", 3, 1)
         self.create_entry(self.frame_polidain, "pd_d", "Разность d (>=1):", 1, 2)
-        self.create_entry(self.frame_polidain, "pd_k1", "k_1 (агресс. зазор):", 2, 3)
-        self.create_entry(self.frame_polidain, "pd_k2", "k_2 (агресс. подъем):", 2, 4)
-        self.create_entry(self.frame_polidain, "pd_k3", "k_3 (агресс. опуск.):", 2, 5)
-        self.create_entry(self.frame_polidain, "pd_k4", "k_4 (агресс. зазор):", 2, 6)
+        self.create_entry(self.frame_polidain, "pd_k1", "k_1 (агресс. зазор):", 4, 3)
+        self.create_entry(self.frame_polidain, "pd_k2", "k_2 (агресс. подъем):", 4, 4)
+        self.create_entry(self.frame_polidain, "pd_k3", "k_3 (агресс. опуск.):", 4, 5)
+        self.create_entry(self.frame_polidain, "pd_k4", "k_4 (агресс. зазор):", 4, 6)
 
         # Polinmail Fields
         # Use a tabview for the 4 configurations
@@ -231,9 +231,9 @@ class CamConfiguratorApp(ctk.CTk):
             # Offset rows by 1 if there is a checkbox
             start_row = 1 if i > 1 else 0
 
-            self.create_entry(self.pm_tabs[i], f"pm_m_{i}", "Степень m (>=1):", 1, start_row)
+            self.create_entry(self.pm_tabs[i], f"pm_m_{i}", "Степень m (>=1):", 5, start_row)
             self.create_entry(self.pm_tabs[i], f"pm_d_{i}", "Разность d (>=1):", 1, start_row+1)
-            self.create_entry(self.pm_tabs[i], f"pm_bc_{i}", "Граничные условия:", "-1, 0, 0, 0, 0", start_row+2)
+            self.create_entry(self.pm_tabs[i], f"pm_bc_{i}", "Граничные условия:", "1, 0, 0, 0, 0", start_row+2)
 
             # Initial state for 2,3,4 is disabled
             if i > 1:

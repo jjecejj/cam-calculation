@@ -33,7 +33,7 @@ def calculate_poly_coefficients(m_list, boundary_conditions):
     A = get_matrix_coefficients(m_list)
     B = boundary_conditions
     coeffs = np.linalg.solve(A, B)
-    return -coeffs
+    return coeffs
 
 def h_phi(fi: float, m_list: list | np.ndarray, coeffs: list | np.ndarray, fi_1: float, fi_0: float, h_kn_max: float):
     """

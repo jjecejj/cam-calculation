@@ -1,1 +1,1 @@
-from .logic import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profile, display_all, display_dashboard, display_graphs_compression, display_profile_compression, display_all_compression, calculate_optimal_angle
+from .logic import set_config, display_graphs_kulachok, display_graphs_tolkatel, display_profile, display_all, calculate_optimal_angle

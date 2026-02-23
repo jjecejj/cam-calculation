@@ -1,1 +1,1 @@
-from .logic import ProfileExportData, create_profil, build_profile
+from .logic import ProfileExportData, create_profile, build_profile

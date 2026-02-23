@@ -50,10 +50,10 @@ def build_profile(profile_data: ProfileData, profile_name: str = "kulachok", lin
         line_type: Тип линии ("spline" или "line").
     """
     config = ProfileExportData(X=profile_data.X, Y=profile_data.Y)
-    create_profil(config, profil_name=profile_name, line_type=line_type)
+    create_profile(config, profil_name=profile_name, line_type=line_type)
 
 
-def create_profil(profile_export_data: ProfileExportData, profil_name: str = "kulachok", line_type: Literal['line', "spline"] = "spline"):
+def create_profile(profile_export_data: ProfileExportData, profil_name: str = "kulachok", line_type: Literal['line', "spline"] = "spline"):
     """
     Генерирует и сохраняет DXF-файл с профилем кулачка.
     Использует библиотеку ezdxf для создания чертежа версии R2018.
