@@ -9,7 +9,7 @@ from core.optimization.config import DifferentialEvolutionConfig, BoundsConfig, 
 from core.profiling_methods.polidain.config import PolidainConfig
 from core.cam_geometry import Kulachok
 from core.profiling_methods.polidain import PolidainCalculator
-from core.profils.tools import ProfileDataExtractor
+from core.profils import ProfileDataExtractor
 
 def fun_optimize_gibrid(x, fi_list = None, m = None, d = None, R_func = None, optimize_config = None):
     z = x[0]  # Тепловой зазор (мм)

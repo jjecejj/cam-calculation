@@ -4,11 +4,11 @@ from core.cam_geometry import Kulachok
 from core.cam_geometry.config import KulachokConfig
 from core.cam_geometry.options import CamGeometryOptions
 from core.profiling_methods.polinmail.config import PolinmailConfig, LocalPolinmailConfig
-from core.profiling_methods.polinmail.logic import PolinmailCalculator
+from core.profiling_methods import PolinmailCalculator
 from options import CamSolveOptions, calculate_cam_solve
-from vizualization.plotter.logic import display_graphs_kulachok, display_graphs_tolkatel, display_profile
+from vizualization.plotter import display_graphs_kulachok, display_graphs_tolkatel, display_profile
 from vizualization.plotter.options import PlotterOptions
-from vizualization.rotate_animation.logic import display_animation
+from vizualization.rotate_animation import display_animation
 from vizualization.rotate_animation.options import RotateAnimationOptions
 
 if __name__ == '__main__':

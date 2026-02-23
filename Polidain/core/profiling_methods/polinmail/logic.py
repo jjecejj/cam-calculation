@@ -1,7 +1,7 @@
 import numpy as np
 
 from core.profiling_methods.polinmail.config import PolinmailConfig
-from core.profiling_methods.base.logic import BaseCalculator
+from core.profiling_methods.base import BaseCalculator
 from typing import List
 
 def get_matrix_coefficients(m_list: List | np.ndarray) -> np.ndarray:
