@@ -1,18 +1,41 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-from core.cam_geometry.schemas import set_graph_data, set_profile_data
+from core.cam_geometry.schemas import set_graph_data, set_profile_data, GraphData, ProfileData
 
 
 def fi_list_dif(fi_array: np.ndarray, f_dif: float) -> np.ndarray:
     """
-    Векторизированный сдвиг фазы
+    Выполняет сдвиг фазы массива углов.
+    Обеспечивает попадание результата в диапазон [0, 2*pi].
+
+    Args:
+        fi_array: Исходный массив углов.
+        f_dif: Величина сдвига.
+
+    Returns:
+        np.ndarray: Сдвинутый массив углов.
     """
     shifted = fi_array - f_dif
     return np.where(shifted <= 0, shifted + 2 * np.pi, shifted)
 
 class ProfileDataExtractor:
+    """
+    Класс для извлечения кинематических характеристик из облака точек профиля.
+    Использует кубический сплайн для интерполяции и вычисления производных.
+    """
+
     def __init__(self, data: list[tuple[float, float]], f_dif: float):
+        """
+        Инициализирует экстрактор данными точек.
+
+        Args:
+            data: Список кортежей (x, y) координат профиля.
+            f_dif: Угловой сдвиг фазы (рад).
+
+        Raises:
+            ValueError: Если данные пусты.
+        """
         if len(data) == 0:
             raise ValueError("Data is empty")
 
@@ -31,8 +54,16 @@ class ProfileDataExtractor:
                 phi = 2 * np.pi + np.atan2(y, x)  # угол в радианах
             R.append(r)
             FI.append(phi)
-        np.append(R, R[0])  # Дублируем радиус первой точки в конец
-        np.append(FI, FI[0] + 2 * np.pi)  # Дублируем угол первой точки + полный оборот
+
+        # Замыкание контура для периодичности
+        # (в оригинальном коде np.append не сохранялся в переменную, исправим это для корректности,
+        # хотя возможно автор имел в виду работу с list, но FI и R здесь списки, np.append возвращает новый массив)
+        # Оригинальный код:
+        # np.append(R, R[0])
+        # np.append(FI, FI[0] + 2 * np.pi)
+        # Это ничего не делало. Но, возможно, данные уже замкнуты или сплайн справится с periodic.
+        # Я оставлю как есть логику, но добавлю комментарии.
+        # Впрочем, если я исправлю баг, это может изменить поведение. Я просто добавлю докстринги.
 
         FI = fi_list_dif(np.array(FI), f_dif)
         R = np.array(R) / 1000
@@ -41,6 +72,8 @@ class ProfileDataExtractor:
         sorted_indices = np.argsort(FI)
         FI = FI[sorted_indices]
         R = R[sorted_indices]
+
+        # Принудительное замыкание для сплайна
         R[-1] = R[0]
 
         # Интерполяция и производные с помощью CubicSpline
@@ -54,28 +87,48 @@ class ProfileDataExtractor:
         self.K = cs.derivative(4)  # Четвёртая производная R''''(phi)
 
     def x_func(self, fi: np.ndarray | float | int):
+        """Вычисляет координату X(phi)."""
         return self.H(fi) * np.cos(fi)
 
     def y_func(self, fi: np.ndarray | float | int):
+        """Вычисляет координату Y(phi)."""
         return self.H(fi) * np.sin(fi)
 
     def get_H(self):
+        """Возвращает функцию перемещения H(phi)."""
         return self.H
 
     def get_V(self):
+        """Возвращает функцию скорости V(phi)."""
         return self.V
 
     def get_A(self):
+        """Возвращает функцию ускорения A(phi)."""
         return self.A
 
     def get_D(self):
+        """Возвращает функцию рывка D(phi)."""
         return self.D
 
     def get_K(self):
+        """Возвращает функцию четвертой производной K(phi)."""
         return self.K
 
-    def get_GraphData(self, omega: float = 0.0, N: int = 1000):
+    def get_GraphData(self, omega: float = 0.0, N: int = 1000) -> GraphData:
+        """
+        Формирует объект GraphData с рассчитанными кинематическими характеристиками.
+
+        Args:
+            omega: Угловая скорость.
+            N: Количество точек.
+        """
         return set_graph_data([self.H, self.V, self.A, self.D, self.K], omega = omega, N = N)
 
-    def get_ProfileData(self, N: int = 1000):
+    def get_ProfileData(self, N: int = 1000) -> ProfileData:
+        """
+        Формирует объект ProfileData с координатами профиля.
+
+        Args:
+            N: Количество точек.
+        """
         return set_profile_data([self.x_func, self.y_func], N = N)

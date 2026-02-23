@@ -11,6 +11,18 @@ from vizualization.rotate_animation.config import RotateProfileData
 
 
 def rotate_profile_data(X: float | ndarray, Y: float | ndarray, angle: float):
+    """
+    Поворачивает координаты профиля на заданный угол.
+    Используется матрица поворота.
+
+    Args:
+        X: Координаты X.
+        Y: Координаты Y.
+        angle: Угол поворота (рад).
+
+    Returns:
+        Tuple[ndarray, ndarray]: Новые координаты (X, Y).
+    """
     angle = -angle - np.pi / 2
     x_new = X * np.cos(angle) - Y * np.sin(angle)
     y_new = X * np.sin(angle) + Y * np.cos(angle)
@@ -18,6 +30,19 @@ def rotate_profile_data(X: float | ndarray, Y: float | ndarray, angle: float):
 
 
 def set_rotate_data(kulachok: Kulachok):
+    """
+    Подготавливает данные для анимации вращения кулачка.
+    Рассчитывает положение профиля для каждого кадра анимации.
+
+    Args:
+        kulachok: Объект кулачка с рассчитанными данными.
+
+    Returns:
+        RotateProfileData: Объект с данными для анимации.
+
+    Raises:
+        ValueError: Если кулачок не был рассчитан.
+    """
     if not (kulachok.kulachok_solve_flag and kulachok.tolkatel_solve_flag and kulachok.profile_solve_flag):
         raise ValueError(f"Не были проведены предварительные вычисления кулачка")
 
@@ -42,6 +67,13 @@ def display_animation(kulachok: Kulachok, interval: int = 50, save_flag: bool = 
                       name_file: str | None = None, pause_flag=False):
     """
     Анимирует вращение кулачка и движение толкателя.
+
+    Args:
+        kulachok: Объект кулачка.
+        interval: Интервал обновления кадров (мс).
+        save_flag: Флаг сохранения анимации в файл.
+        name_file: Имя файла для сохранения.
+        pause_flag: Флаг включения поддержки паузы по клику.
     """
 
     data = set_rotate_data(kulachok)
@@ -155,10 +187,18 @@ def display_dashboard_animation(kulachok: Kulachok,
                                 graphs_type: Literal['degree', 'rad', 't'] = 'degree'):
     """
     Анимирует приборную панель: слева бегущий курсор по графикам, справа вращение механизма.
+
+    Args:
+        kulachok: Объект кулачка.
+        interval: Интервал анимации (мс).
+        save_flag: Флаг сохранения.
+        pause_flag: Флаг паузы.
+        name_file: Имя файла для сохранения.
+        graphs_type: Тип аргумента графиков.
     """
     # 1. Подготовка данных
     t_type = kulachok.tolkatel_solve_type
-    rotate_data = set_rotate_data(kulachok, tolkatel_type=t_type)
+    rotate_data = set_rotate_data(kulachok)
     data_kin = kulachok.tolkatel_data
 
     if graphs_type == 'degree':
