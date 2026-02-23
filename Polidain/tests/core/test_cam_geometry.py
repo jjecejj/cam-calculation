@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from core.cam_geometry.config import default_kulachok_config
-from core.cam_geometry.logic import Kulachok
+from core.cam_geometry import Kulachok
 from core.profiling_methods.polidain import PolidainCalculator
 from core.profiling_methods.polidain.config import default_polidain_config
 

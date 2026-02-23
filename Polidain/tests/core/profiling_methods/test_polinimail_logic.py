@@ -1,7 +1,7 @@
 import pytest
 
 from core.profiling_methods.polinmail.config import default_polinmail_config
-from core.profiling_methods.polinmail.logic import calculate_poly_coefficients, PolinmailCalculator
+from core.profiling_methods import PolinmailCalculator
 
 
 @pytest.fixture

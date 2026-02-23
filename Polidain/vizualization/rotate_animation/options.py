@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
-from vizualization.rotate_animation.logic import set_rotate_data, display_animation, display_dashboard_animation
+from vizualization.rotate_animation import display_animation, display_dashboard_animation
 
 
 class RotateAnimationOptions(BaseModel):

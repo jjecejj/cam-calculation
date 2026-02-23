@@ -1,7 +1,8 @@
 import pytest
 
 from core.profiling_methods.polidain.config import default_polidain_config
-from core.profiling_methods.polidain.logic import k_fun, c_fun, PolidainCalculator
+from core.profiling_methods.polidain.logic import k_fun, c_fun
+from core.profiling_methods import PolidainCalculator
 
 
 def test_k_fun():

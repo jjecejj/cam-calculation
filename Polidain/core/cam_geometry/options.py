@@ -9,8 +9,8 @@ from core.profiling_methods.base.config import MethodConfig
 from core.profiling_methods.polidain import PolidainCalculator
 from core.profiling_methods.polidain.config import default_polidain_config, PolidainConfig
 from core.profiling_methods.polinmail.config import default_polinmail_config, PolinmailConfig
-from core.profiling_methods.polinmail.logic import PolinmailCalculator
-from vizualization.plotter.logic import calculate_optimal_angle
+from core.profiling_methods import PolinmailCalculator
+from vizualization.plotter import calculate_optimal_angle
 
 
 class CamGeometryOptions(BaseModel):

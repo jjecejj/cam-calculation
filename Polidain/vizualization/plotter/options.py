@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
-from vizualization.plotter.logic import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, display_profile
+from vizualization.plotter import display_dashboard, display_graphs_tolkatel, display_graphs_kulachok, display_profile
 
 
 class PlotterOptions(BaseModel):

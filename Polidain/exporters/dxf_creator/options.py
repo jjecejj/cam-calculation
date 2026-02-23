@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
 from core.cam_geometry import Kulachok
-from exporters.dxf_creator.logic import build_profile
+from exporters.dxf_creator import build_profile
 
 
 class DxfCreatorOptions(BaseModel):
