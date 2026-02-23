@@ -33,8 +33,8 @@ class KulachokConfig(BaseModel):
     f_z: float = Field(..., gt=0, description="Фаза теплового зазора (рад)")
 
     # Опциональные параметры
-    D_t: float = Field(default=0.0, gt=0,  description="Диаметр толкателя")
-    R_r: float = Field(default=0.0, gt=0, description="Радиус ролика")
+    D_t: float = Field(default=0.0, ge=0,  description="Диаметр толкателя")
+    R_r: float = Field(default=0.0, ge=0, description="Радиус ролика")
 
     @model_validator(mode='after')
     def check_f(self):
