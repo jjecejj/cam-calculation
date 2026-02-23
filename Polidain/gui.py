@@ -2,6 +2,7 @@ import json
 import customtkinter as ctk
 from tkinter import messagebox, filedialog
 from typing import Dict, Any
+import numpy as np
 
 try:
     from options import CamSolveOptions, calculate_cam_solve
@@ -120,13 +121,13 @@ class CamConfiguratorApp(ctk.CTk):
         """
         if choice == 'thin':
             self.entries["k_Dt"].configure(state="disabled")
-            self.entries["k_Rr"].configure(state="disabled")
+            self.entries["k_Dr"].configure(state="disabled")
         elif choice == 'flat':
             self.entries["k_Dt"].configure(state="normal")
-            self.entries["k_Rr"].configure(state="disabled")
+            self.entries["k_Dr"].configure(state="disabled")
         elif choice == 'roller':
             self.entries["k_Dt"].configure(state="disabled")
-            self.entries["k_Rr"].configure(state="normal")
+            self.entries["k_Dr"].configure(state="normal")
 
     def toggle_dxf_name(self):
         """
@@ -164,7 +165,7 @@ class CamConfiguratorApp(ctk.CTk):
         self.geom_kulachok_type.grid(row=1, column=1, padx=10, pady=5)
 
         self.create_entry(self.tab_geom, "geom_n", "Кол-во точек (N):", 1000, 2)
-        self.create_entry(self.tab_geom, "geom_angle", "Начальный угол:", 0.0, 3)
+        self.create_entry(self.tab_geom, "geom_angle", "Начальный угол (град):", 0.0, 3)
 
         self.geom_opt_angle = ctk.CTkCheckBox(self.tab_geom, text="Авторассчет оптимального угла",
                                               command=self.toggle_initial_angle)
@@ -176,16 +177,16 @@ class CamConfiguratorApp(ctk.CTk):
         Инициализирует элементы управления на вкладке 'Кулачок'.
         """
         self.create_entry(self.tab_kulachok, "k_Nk", "Обороты в минуту (N_k):", 100, 0)
-        self.create_entry(self.tab_kulachok, "k_D", "Базовый диаметр (D):", 0.05, 1)
-        self.create_entry(self.tab_kulachok, "k_h", "Макс. перемещение (h):", 0.02, 2)
-        self.create_entry(self.tab_kulachok, "k_z", "Тепловой зазор (z):", 0.001, 3)
-        self.create_entry(self.tab_kulachok, "k_Dt", "Диаметр толкателя (D_t):", 0.0, 4)
-        self.create_entry(self.tab_kulachok, "k_Rr", "Радиус ролика (R_r):", 0.0, 5)
+        self.create_entry(self.tab_kulachok, "k_D", "Базовый диаметр (D, мм):", 0.05 * 1e3, 1)
+        self.create_entry(self.tab_kulachok, "k_h", "Макс. перемещение (h, мм):", 0.02 * 1e3, 2)
+        self.create_entry(self.tab_kulachok, "k_z", "Тепловой зазор (z, мм):", 0.001 * 1e3, 3)
+        self.create_entry(self.tab_kulachok, "k_Dt", "Диаметр толкателя (D_t, мм):", 0.0 * 1e3, 4)
+        self.create_entry(self.tab_kulachok, "k_Dr", "Диаметр ролика (D_r, мм):", 0.0 * 1e3, 5)
 
-        self.create_entry(self.tab_kulachok, "k_fpod", "Фаза подъёма (рад):", 1.0, 0, col=1)
-        self.create_entry(self.tab_kulachok, "k_fv", "Фаза выдержки (рад):", 1.0, 1, col=1)
-        self.create_entry(self.tab_kulachok, "k_fop", "Фаза опускания (рад):", 1.0, 2, col=1)
-        self.create_entry(self.tab_kulachok, "k_fz", "Фаза зазора (рад):", 0.1, 3, col=1)
+        self.create_entry(self.tab_kulachok, "k_fpod", "Фаза подъёма (град):", 80, 0, col=1)
+        self.create_entry(self.tab_kulachok, "k_fv", "Фаза выдержки (град):", 15, 1, col=1)
+        self.create_entry(self.tab_kulachok, "k_fop", "Фаза опускания (град):", 80, 2, col=1)
+        self.create_entry(self.tab_kulachok, "k_fz", "Фаза зазора (град):", 15, 3, col=1)
 
     def init_method_tab(self):
         """
@@ -339,15 +340,15 @@ class CamConfiguratorApp(ctk.CTk):
         # Данные для CamConfig
         cam_config_data = {
             "N_k": float(self.entries["k_Nk"].get()),
-            "D": float(self.entries["k_D"].get()),
-            "h": float(self.entries["k_h"].get()),
-            "z": float(self.entries["k_z"].get()),
-            "D_t": float(self.entries["k_Dt"].get()),
-            "R_r": float(self.entries["k_Rr"].get()),
-            "f_pod": float(self.entries["k_fpod"].get()),
-            "f_v": float(self.entries["k_fv"].get()),
-            "f_op": float(self.entries["k_fop"].get()),
-            "f_z": float(self.entries["k_fz"].get()),
+            "D": float(self.entries["k_D"].get()) / 1e3,
+            "h": float(self.entries["k_h"].get()) / 1e3,
+            "z": float(self.entries["k_z"].get()) / 1e3,
+            "D_t": float(self.entries["k_Dt"].get()) / 1e3,
+            "R_r": float(self.entries["k_Dr"].get()) / (2 * 1e3),
+            "f_pod": float(self.entries["k_fpod"].get()) / 180 * np.pi,
+            "f_v": float(self.entries["k_fv"].get()) / 180 * np.pi,
+            "f_op": float(self.entries["k_fop"].get()) / 180 * np.pi,
+            "f_z": float(self.entries["k_fz"].get()) / 180 * np.pi,
         }
 
         # Данные для CalculatorConfig
@@ -390,7 +391,7 @@ class CamConfiguratorApp(ctk.CTk):
                 "calculator_type": calc_type,
                 "kulachok_type": self.geom_kulachok_type.get(),
                 "N": int(self.entries["geom_n"].get()),
-                "initial_angle": float(self.entries["geom_angle"].get()),
+                "initial_angle": float(self.entries["geom_angle"].get()) / 180 * np.pi,
                 "calculate_optimal_initial_angle": bool(self.geom_opt_angle.get()),
                 "cam_config": cam_config_data,
                 "calculator_config": calculator_config_data
@@ -553,7 +554,7 @@ class CamConfiguratorApp(ctk.CTk):
             # Cam Config
             kul_conf = geom.get("cam_config", {})
             mapping_cam = {
-                "N_k": "k_Nk", "D": "k_D", "h": "k_h", "z": "k_z", "D_t": "k_Dt", "R_r": "k_Rr",
+                "N_k": "k_Nk", "D": "k_D", "h": "k_h", "z": "k_z", "D_t": "k_Dt", "R_r": "k_Dr",
                 "f_pod": "k_fpod", "f_v": "k_fv", "f_op": "k_fop", "f_z": "k_fz"
             }
             for key, entry_key in mapping_cam.items():

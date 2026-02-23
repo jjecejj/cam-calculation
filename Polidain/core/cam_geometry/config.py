@@ -42,6 +42,11 @@ class KulachokConfig(BaseModel):
             raise ValidationError(f"Ошибка в значениях фаз, их сумма больше 2 * pi")
         return self
 
+    @model_validator(mode='after')
+    def check_z(self):
+        if self.z >= self.D / 2:
+            raise ValidationError(f"Ошибка в значении теплового зазора z, его значение больше радиуса кулачка R")
+        return self
     # --- Вычисляемые свойства (Автоматический расчет) ---
     @property
     def phi_0(self) -> float:
