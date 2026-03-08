@@ -52,7 +52,7 @@ class GraphData(BaseModel):
     V_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог скорости")
     A_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог ускорения")
     D_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог рывка")
-    K_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Четвертая производная")
+    K_rad: np.ndarray[float | np.ndarray] |  list[float | np.ndarray] = Field(..., min_length=10, description="Четвертая производная")
     omega_rad: float  = Field(ge = 0.0, description="Угловая скорость (рад/с)")
 
     @model_validator(mode='after')

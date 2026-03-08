@@ -3,6 +3,7 @@ from typing import Literal
 
 from core.cam_geometry import Kulachok
 from vizualization.plotter import display_all, display_graphs_tolkatel, display_graphs_kulachok, display_profile
+from vizualization.plotter.logic import display_dashboard
 
 
 class PlotterOptions(BaseModel):
@@ -31,12 +32,10 @@ class PlotterOptions(BaseModel):
 def resolve_plotter_options(config: PlotterOptions, kulachok: Kulachok, initial_angle: float):
     if config.profile_and_graphs_together_flag:
         if config.graphs_kulachok_flag:
-            display_all(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
-                              target='kulachok')
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type, target='kulachok')
 
         if config.graphs_tolkatel_flag:
-            display_all(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type,
-                              target='tolkatel')
+            display_dashboard(kulachok, initial_angle=initial_angle, graphs_type=config.graphs_argument_type, target='tolkatel')
 
     else:
         if config.graphs_tolkatel_flag:

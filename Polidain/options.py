@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Union
 
 from core.cam_geometry.options import CamGeometryOptions, resolve_cam_geometry_options
-from core.optimization.options import CamOptimizationOptions, calculate_cam_optimization
+from core.optimization.options import CamOptimizationOptions
 from vizualization.plotter.options import PlotterOptions, resolve_plotter_options
 from vizualization.rotate_animation.options import RotateAnimationOptions, resolve_rotate_animation_options
 from exporters.dxf_creator.options import DxfCreatorOptions, resolve_dxf_creator_options
@@ -50,7 +50,8 @@ def calculate(cam_options: Union[CamSolveOptions, CamOptimizationOptions]):
     if isinstance(cam_options, CamSolveOptions):
         return calculate_cam_solve(cam_options)
     elif isinstance(cam_options, CamOptimizationOptions):
-        return calculate_cam_optimization(cam_options)
+        return None
+        #return calculate_cam_optimization(cam_options)
     else:
         raise ValueError(
             f'cam_options должен быть объектом одного из классов: '

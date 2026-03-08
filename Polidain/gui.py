@@ -29,6 +29,14 @@ except ImportError:
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
+kulachok_type_translate ={
+    'Тонкий':'thin',
+    'Плоский':'flat',
+    "Роликовый":'roller',
+    'тонкий':'thin',
+    'плоский':'flat',
+    "роликовый":'roller'
+}
 
 class CamConfiguratorApp(ctk.CTk):
     """
@@ -117,15 +125,15 @@ class CamConfiguratorApp(ctk.CTk):
         Блокирует или разблокирует поля параметров толкателя (диаметр, радиус) в зависимости от выбранного типа.
 
         Args:
-            choice: Выбранный тип толкателя ('thin', 'flat', 'roller').
+            choice: Выбранный тип толкателя ('Тонкий', 'Плоский', 'Роликовый').
         """
-        if choice == 'thin':
+        if choice == 'Тонкий':
             self.entries["k_Dt"].configure(state="disabled")
             self.entries["k_Dr"].configure(state="disabled")
-        elif choice == 'flat':
+        elif choice == 'Плоский':
             self.entries["k_Dt"].configure(state="normal")
             self.entries["k_Dr"].configure(state="disabled")
-        elif choice == 'roller':
+        elif choice == 'Роликовый':
             self.entries["k_Dt"].configure(state="disabled")
             self.entries["k_Dr"].configure(state="normal")
 
@@ -160,11 +168,11 @@ class CamConfiguratorApp(ctk.CTk):
         self.geom_calc_type.grid(row=0, column=1, padx=10, pady=5)
 
         ctk.CTkLabel(self.tab_geom, text="Тип толкателя:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.geom_kulachok_type = ctk.CTkOptionMenu(self.tab_geom, values=['thin', 'flat', 'roller'],
+        self.geom_kulachok_type = ctk.CTkOptionMenu(self.tab_geom, values=['Тонкий', 'Плоский', 'Роликовый'],
                                                     command=self.update_follower_params)
         self.geom_kulachok_type.grid(row=1, column=1, padx=10, pady=5)
 
-        self.create_entry(self.tab_geom, "geom_n", "Кол-во точек (N):", 1000, 2)
+        self.create_entry(self.tab_geom, "geom_n", "Кол-во точек (N):", 300, 2)
         self.create_entry(self.tab_geom, "geom_angle", "Начальный угол (град):", 0.0, 3)
 
         self.geom_opt_angle = ctk.CTkCheckBox(self.tab_geom, text="Авторассчет оптимального угла",
@@ -177,11 +185,11 @@ class CamConfiguratorApp(ctk.CTk):
         Инициализирует элементы управления на вкладке 'Кулачок'.
         """
         self.create_entry(self.tab_kulachok, "k_Nk", "Обороты в минуту (N_k):", 100, 0)
-        self.create_entry(self.tab_kulachok, "k_D", "Базовый диаметр (D, мм):", 0.05 * 1e3, 1)
-        self.create_entry(self.tab_kulachok, "k_h", "Макс. перемещение (h, мм):", 0.02 * 1e3, 2)
+        self.create_entry(self.tab_kulachok, "k_D", "Базовый диаметр (D, мм):", 0.1 * 1e3, 1)
+        self.create_entry(self.tab_kulachok, "k_h", "Макс. перемещение (h, мм):", 0.012 * 1e3, 2)
         self.create_entry(self.tab_kulachok, "k_z", "Тепловой зазор (z, мм):", 0.001 * 1e3, 3)
-        self.create_entry(self.tab_kulachok, "k_Dt", "Диаметр толкателя (D_t, мм):", 0.0 * 1e3, 4)
-        self.create_entry(self.tab_kulachok, "k_Dr", "Диаметр ролика (D_r, мм):", 0.0 * 1e3, 5)
+        self.create_entry(self.tab_kulachok, "k_Dt", "Диаметр толкателя (D_t, мм):", 0.05 * 1e3, 4)
+        self.create_entry(self.tab_kulachok, "k_Dr", "Диаметр ролика (D_r, мм):", 0.01 * 1e3, 5)
 
         self.create_entry(self.tab_kulachok, "k_fpod", "Фаза подъёма (град):", 80, 0, col=1)
         self.create_entry(self.tab_kulachok, "k_fv", "Фаза выдержки (град):", 15, 1, col=1)
@@ -203,10 +211,10 @@ class CamConfiguratorApp(ctk.CTk):
                                                                                                       sticky="w")
         self.create_entry(self.frame_polidain, "pd_m", "Степень m (>=2):", 3, 1)
         self.create_entry(self.frame_polidain, "pd_d", "Разность d (>=1):", 1, 2)
-        self.create_entry(self.frame_polidain, "pd_k1", "k_1 (агресс. зазор):", 4, 3)
-        self.create_entry(self.frame_polidain, "pd_k2", "k_2 (агресс. подъем):", 4, 4)
-        self.create_entry(self.frame_polidain, "pd_k3", "k_3 (агресс. опуск.):", 4, 5)
-        self.create_entry(self.frame_polidain, "pd_k4", "k_4 (агресс. зазор):", 4, 6)
+        self.create_entry(self.frame_polidain, "pd_k1", "k_1 (Степень второго члена. зазор):", 4, 3)
+        self.create_entry(self.frame_polidain, "pd_k2", "k_2 (Степень второго члена. подъём):", 4, 4)
+        self.create_entry(self.frame_polidain, "pd_k3", "k_3 (Степень второго члена. спуск):", 4, 5)
+        self.create_entry(self.frame_polidain, "pd_k4", "k_4 (Степень второго члена. зазор):", 4, 6)
 
         # Polinmail Fields
         # Use a tabview for the 4 configurations
@@ -225,11 +233,8 @@ class CamConfiguratorApp(ctk.CTk):
                                       command=lambda idx=i: self.toggle_pm_config(idx))
                 chk.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
                 self.entries[f"pm_use_c{i}"] = chk # Store check widget to access state if needed, or variable
-                # We need to store variable to get value easily or just use widget.get()
-                # CTkCheckBox.get() returns 1 or 0.
 
             # Fields
-            # Offset rows by 1 if there is a checkbox
             start_row = 1 if i > 1 else 0
 
             self.create_entry(self.pm_tabs[i], f"pm_m_{i}", "Степень m (>=1):", 5, start_row)
@@ -294,10 +299,10 @@ class CamConfiguratorApp(ctk.CTk):
         """
         Инициализирует элементы управления на вкладке 'Анимация'.
         """
-        self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию", command=self.toggle_anim_params)
+        self.anim_display = ctk.CTkCheckBox(self.tab_anim, text="Показать анимацию кулачка", command=self.toggle_anim_params)
         self.anim_display.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-        self.anim_together = ctk.CTkCheckBox(self.tab_anim, text="Анимация с графиками", command=self.toggle_anim_params)
+        self.anim_together = ctk.CTkCheckBox(self.tab_anim, text="Анимация анимацию кулачка с графиками", command=self.toggle_anim_params)
         self.anim_together.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
         self.anim_save = ctk.CTkCheckBox(self.tab_anim, text="Сохранить анимацию")
@@ -389,7 +394,7 @@ class CamConfiguratorApp(ctk.CTk):
         data = {
             "cam_geometry_options": {
                 "calculator_type": calc_type,
-                "kulachok_type": self.geom_kulachok_type.get(),
+                "kulachok_type": kulachok_type_translate[self.geom_kulachok_type.get()],
                 "N": int(self.entries["geom_n"].get()),
                 "initial_angle": float(self.entries["geom_angle"].get()) / 180 * np.pi,
                 "calculate_optimal_initial_angle": bool(self.geom_opt_angle.get()),
@@ -537,7 +542,7 @@ class CamConfiguratorApp(ctk.CTk):
             self.geom_calc_type.set(calc_type)
             self.update_method_visibility(calc_type)
 
-            kulachok_type = geom.get("kulachok_type", "thin")
+            kulachok_type = geom.get("kulachok_type", "Тонкий")
             self.geom_kulachok_type.set(kulachok_type)
             self.update_follower_params(kulachok_type)
 

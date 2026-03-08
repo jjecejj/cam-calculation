@@ -324,7 +324,10 @@ class Kulachok:
         R[-1] = self.config.D * 1e3 / 2
 
         # Интерполяция
-        R_func = interp1d(fi_list_kulachok, R, kind="linear")
+        R_func_flat = interp1d(fi_list_kulachok, R, kind="linear")
+        R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad, kind="linear")
+        def R_func(fi: np.ndarray | float):
+            return R_func_flat(fi) * (fi >= self.config.phi_1) * (fi <= self.config.phi_4) + R_func_z(fi) * ((fi < self.config.phi_1) + (fi > self.config.phi_4))
         self.profile_data = ProfileData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
         self.profile_solve_flag = True
         self.tolkatel_solve_type = "flat"
@@ -363,8 +366,8 @@ class Kulachok:
 
         # 1. Извлечение данных
         phi = self.tolkatel_data.fi_list_rad
-        h = self.tolkatel_data.H_rad
-        v = self.tolkatel_data.V_rad
+        h = self.kulachok_data.H_rad - self.config.D * 1e3 / 2.0
+        v = self.kulachok_data.V_rad
 
         # Геометрические параметры
         Rb = self.config.D * 1e3 / 2.0
@@ -385,9 +388,14 @@ class Kulachok:
         norm_factor[norm_factor == 0] = 1e-9
 
         # Координаты конструктивного профиля
+        xp = xc - Rr * (dyc / norm_factor) * (phi >= self.config.phi_1) * (phi <= self.config.phi_4)
+        yp = yc + Rr * (dxc / norm_factor) * (phi >= self.config.phi_1) * (phi <= self.config.phi_4)
         xp = xc - Rr * (dyc / norm_factor)
         yp = yc + Rr * (dxc / norm_factor)
 
+        R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad, kind="linear")
+        xp_z = R_func_z(phi) * ((phi < self.config.phi_1) + (phi > self.config.phi_4)) * np.cos(phi)
+        yp_z = R_func_z(phi) * ((phi < self.config.phi_1) + (phi > self.config.phi_4)) * np.sin(phi)
 
         self.profile_data = ProfileData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
                                        X=xp,

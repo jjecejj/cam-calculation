@@ -10,7 +10,7 @@ class ValidationError(Exception):
 class LocalPolinmailConfig(BaseModel):
     m: int = Field(..., ge=1, description="Степень при первом члене")
     d: int = Field(..., ge=1, description="Разность степеней, не меньше 1")
-    boundary_conditions: List[float] = Field(default=[-1, 0, 0, 0, 0], description="Граничные условия")
+    boundary_conditions: List[float] = Field(default=[1, 0, 0, 0, 0], description="Граничные условия")
 
     @property
     def m_list(self) -> List[int]:
