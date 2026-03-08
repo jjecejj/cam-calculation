@@ -199,25 +199,48 @@ class CamConfiguratorApp(ctk.CTk):
     def init_method_tab(self):
         """
         Инициализирует элементы управления на вкладке 'Метод расчета'.
-        Создает фреймы для настроек Polidain и Polinmail.
+        Создает фреймы для настроек Polidain и Polinmail, а также добавляет формулу.
         """
         self.frame_polidain = ctk.CTkFrame(self.tab_method, fg_color="transparent")
         self.frame_polinmail = ctk.CTkFrame(self.tab_method, fg_color="transparent")
 
-        # Polidain Fields
-        ctk.CTkLabel(self.frame_polidain, text="Настройки Polidain", font=("Arial", 16, "bold")).grid(row=0, column=0,
-                                                                                                      columnspan=2,
-                                                                                                      pady=(10, 5),
-                                                                                                      sticky="w")
-        self.create_entry(self.frame_polidain, "pd_m", "Степень m (>=2):", 3, 1)
-        self.create_entry(self.frame_polidain, "pd_d", "Разность d (>=1):", 1, 2)
-        self.create_entry(self.frame_polidain, "pd_k1", "k_1 (Степень второго члена. зазор):", 4, 3)
-        self.create_entry(self.frame_polidain, "pd_k2", "k_2 (Степень второго члена. подъём):", 4, 4)
-        self.create_entry(self.frame_polidain, "pd_k3", "k_3 (Степень второго члена. спуск):", 4, 5)
-        self.create_entry(self.frame_polidain, "pd_k4", "k_4 (Степень второго члена. зазор):", 4, 6)
+        # --- БЛОК POLIDAIN ---
+        # 1. Загрузка и отображение картинки с формулой
+        try:
+            # Укажи правильный путь к твоему файлу formula.png
+            import os
+            from PIL import Image  # Лучше перенести этот импорт в самое начало файла gui.py
 
-        # Polinmail Fields
-        # Use a tabview for the 4 configurations
+            # Ищем картинку в той же папке, где лежит скрипт
+            img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images\\formula_poidain.png")
+
+            formula_img = Image.open(img_path)
+            self.ctk_img = ctk.CTkImage(light_image=formula_img,
+                                        dark_image=formula_img,
+                                        size=(300, 100))  # Подбери нужный размер (ширина, высота)
+
+            img_label = ctk.CTkLabel(self.frame_polidain, image=self.ctk_img, text="")
+            img_label.grid(row=10, column=0, columnspan=2, pady=(0, 10))
+
+            row_offset = 1  # Сдвигаем остальные элементы на 1 строку вниз
+        except Exception as e:
+            print(f"Не удалось загрузить картинку с формулой: {e}")
+            row_offset = 0  # Если картинки нет, оставляем старые индексы строк
+
+        # 2. Заголовок и поля ввода Polidain
+        ctk.CTkLabel(self.frame_polidain, text="Настройки Polidain", font=("Arial", 16, "bold")).grid(
+            row=row_offset, column=0, columnspan=2, pady=(10, 5), sticky="w"
+        )
+
+        self.create_entry(self.frame_polidain, "pd_m", "Степень m (>=2):", 3, row_offset + 1)
+        self.create_entry(self.frame_polidain, "pd_d", "Разность d (>=1):", 1, row_offset + 2)
+        self.create_entry(self.frame_polidain, "pd_k1", "p_1 (Степень 2-го члена, зазор):", 4, row_offset + 3)
+        self.create_entry(self.frame_polidain, "pd_k2", "p_2 (Степень 2-го члена, подъём):", 4, row_offset + 4)
+        self.create_entry(self.frame_polidain, "pd_k3", "p_3 (Степень 2-го члена, спуск):", 4, row_offset + 5)
+        self.create_entry(self.frame_polidain, "pd_k4", "p_4 (Степень 2-го члена, зазор):", 4, row_offset + 6)
+
+        # --- БЛОК POLINMAIL ---
+        # Вкладки для 4-х конфигураций
         self.pm_tabview = ctk.CTkTabview(self.frame_polinmail, height=300)
         self.pm_tabview.pack(fill="both", expand=True, padx=5, pady=5)
 
@@ -226,22 +249,22 @@ class CamConfiguratorApp(ctk.CTk):
             tab_name = f"Config {i}"
             self.pm_tabs[i] = self.pm_tabview.add(tab_name)
 
-            # For configs 2, 3, 4 add a checkbox to enable/disable
+            # Для конфигов 2, 3, 4 добавляем чекбокс включения/отключения
             if i > 1:
                 chk_var = ctk.BooleanVar(value=False)
                 chk = ctk.CTkCheckBox(self.pm_tabs[i], text="Использовать свой конфиг", variable=chk_var,
                                       command=lambda idx=i: self.toggle_pm_config(idx))
                 chk.grid(row=0, column=0, columnspan=2, padx=10, pady=5, sticky="w")
-                self.entries[f"pm_use_c{i}"] = chk # Store check widget to access state if needed, or variable
+                self.entries[f"pm_use_c{i}"] = chk  # Сохраняем виджет чекбокса для доступа к его состоянию
 
-            # Fields
+            # Поля ввода
             start_row = 1 if i > 1 else 0
 
             self.create_entry(self.pm_tabs[i], f"pm_m_{i}", "Степень m (>=1):", 5, start_row)
-            self.create_entry(self.pm_tabs[i], f"pm_d_{i}", "Разность d (>=1):", 1, start_row+1)
-            self.create_entry(self.pm_tabs[i], f"pm_bc_{i}", "Граничные условия:", "1, 0, 0, 0, 0", start_row+2)
+            self.create_entry(self.pm_tabs[i], f"pm_d_{i}", "Разность d (>=1):", 1, start_row + 1)
+            self.create_entry(self.pm_tabs[i], f"pm_bc_{i}", "Граничные условия:", "1, 0, 0, 0, 0", start_row + 2)
 
-            # Initial state for 2,3,4 is disabled
+            # Изначальное состояние для 2, 3, 4 — отключено
             if i > 1:
                 self.toggle_pm_config(i)
 
