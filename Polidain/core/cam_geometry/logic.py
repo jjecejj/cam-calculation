@@ -309,10 +309,10 @@ class Kulachok:
         # Проверка возможности построения профиля для заданного закона движения толкателя
         self.profile_flat_check()
 
-        # Расчёт угла откланения и эксцентроситета
-        E = self.tolkatel_data.V_t / self.tolkatel_data.omega_rad
-        R = np.sqrt(E**2 + (self.tolkatel_data.H_t + self.config.D * 1e3 / 2)**2)
-        delta_fi = np.atan(E / (self.tolkatel_data.H_t + self.config.D * 1e3 / 2))
+        # Расчёт угла откланения и эксцентроситета (в м)
+        E = self.tolkatel_data.V_rad / 1e3
+        R = np.sqrt(E**2 + (self.tolkatel_data.H_rad / 1e3 + self.config.D / 2)**2)
+        delta_fi = np.atan(E / (self.tolkatel_data.H_rad / 1e3 + self.config.D / 2))
         fi_list_tolkatel = self.tolkatel_data.fi_list_rad
         fi_list_kulachok = (fi_list_tolkatel + delta_fi) % (2 * np.pi)
 
@@ -324,13 +324,13 @@ class Kulachok:
         fi_list_kulachok = fi_list_kulachok[unique_idx]
         R = R[unique_idx]
         fi_list_kulachok[0] = 0
-        R[0] = self.config.D * 1e3 / 2
+        R[0] = self.config.D / 2
         fi_list_kulachok[-1] = 2 * np.pi
-        R[-1] = self.config.D * 1e3 / 2
+        R[-1] = self.config.D / 2
 
         # Интерполяция
         R_func_flat = interp1d(fi_list_kulachok, R, kind="linear")
-        R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad, kind="linear")
+        R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad / 1e3, kind="linear")
         def R_func(fi: np.ndarray | float):
             return R_func_flat(fi) * (fi >= self.config.phi_1) * (fi <= self.config.phi_4) + R_func_z(fi) * ((fi < self.config.phi_1) + (fi > self.config.phi_4))
         def X_func(fi: np.ndarray | float):
@@ -375,14 +375,14 @@ class Kulachok:
 
         self.profile_roller_check()
 
-        # 1. Извлечение данных
+        # 1. Извлечение данных (в м)
         phi = self.tolkatel_data.fi_list_rad
-        h = interp1d(phi, self.kulachok_data.H_rad - self.config.D * 1e3 / 2.0, kind="linear")
-        v = interp1d(phi, self.kulachok_data.V_rad, kind="linear")
+        h = interp1d(phi, self.kulachok_data.H_rad / 1e3 - self.config.D / 2.0, kind="linear")
+        v = interp1d(phi, self.kulachok_data.V_rad / 1e3, kind="linear")
 
-        # Геометрические параметры
-        Rb = self.config.D * 1e3 / 2.0
-        Rr = self.config.R_r * 1e3
+        # Геометрические параметры (в м)
+        Rb = self.config.D / 2.0
+        Rr = self.config.R_r
 
         # 2. Расчет теоретического профиля (Траектория центра ролика)
         def Rc_func(fi: np.ndarray | float):
@@ -396,7 +396,7 @@ class Kulachok:
         def dxc_func(fi: np.ndarray | float):
             return v(fi) * np.cos(fi) - Rc_func(fi) * np.sin(fi)
         def dyc_func(fi: np.ndarray | float):
-            return(fi) * np.sin(fi) + Rc_func(fi) * np.cos(fi)
+            return v(fi) * np.sin(fi) + Rc_func(fi) * np.cos(fi)
 
         # Модуль вектора касательной
         def norm_func(fi: np.ndarray | float):
