@@ -227,7 +227,9 @@ class Kulachok:
         Args:
             N: Количество точек.
         """
-        self.kulachok_data = set_graph_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega, N = N)
+        self.kulachok_data = set_graph_data([self.fun_h, self.fun_v, self.fun_a, self.fun_d, self.fun_k], self.config.omega,
+                                            self.config.phi_1, self.config.phi_2, self.config.phi_3, self.config.phi_4, self.config.phi_5,
+                                            N = N)
         self.kulachok_solve_flag = True
 
     def set_tolkatel_data(self, N: int = 1000):
@@ -237,7 +239,8 @@ class Kulachok:
         Args:
             N: Количество точек.
         """
-        self.tolkatel_data = set_graph_data([self.fun_h_tolkatel, self.fun_v_tolkatel, self.fun_a_tolkatel, self.fun_d_tolkatel, self.fun_k_tolkatel], self.config.omega, N = N)
+        self.tolkatel_data = set_graph_data([self.fun_h_tolkatel, self.fun_v_tolkatel, self.fun_a_tolkatel, self.fun_d_tolkatel, self.fun_k_tolkatel], self.config.omega,
+                                            self.config.phi_1, self.config.phi_2, self.config.phi_3, self.config.phi_4, self.config.phi_5, N = N)
         self.tolkatel_solve_flag = True
 
     def set_profile_data(self, N: int = 1000):
@@ -247,7 +250,9 @@ class Kulachok:
         Args:
             N: Количество точек.
         """
-        self.profile_data = set_profile_data([self.fun_x, self.fun_y], N = N)
+        self.profile_data = set_profile_data([self.fun_x, self.fun_y],
+                                             self.config.phi_1, self.config.phi_2, self.config.phi_3, self.config.phi_4, self.config.phi_5,
+                                             N = N)
         self.profile_solve_flag = True
         self.tolkatel_solve_type = "thin"
 
@@ -297,7 +302,7 @@ class Kulachok:
                 "Необходимо повысить минимальный радиус кривизны."
             )
 
-    def set_profile_flat(self):
+    def set_profile_flat(self, N: int = 1000):
         """
         Рассчитывает профиль кулачка для плоского (тарельчатого) толкателя.
         """
@@ -328,7 +333,13 @@ class Kulachok:
         R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad, kind="linear")
         def R_func(fi: np.ndarray | float):
             return R_func_flat(fi) * (fi >= self.config.phi_1) * (fi <= self.config.phi_4) + R_func_z(fi) * ((fi < self.config.phi_1) + (fi > self.config.phi_4))
-        self.profile_data = ProfileData(fi_list=fi_list_tolkatel.copy(), X=R_func(fi_list_tolkatel) * np.cos(fi_list_tolkatel), Y=R_func(fi_list_tolkatel) * np.sin(fi_list_tolkatel))
+        def X_func(fi: np.ndarray | float):
+            return R_func(fi) * np.cos(fi)
+        def Y_func(fi: np.ndarray | float):
+            return R_func(fi) * np.sin(fi)
+        self.profile_data = set_profile_data([X_func, Y_func],
+                                        self.config.phi_1, self.config.phi_2, self.config.phi_3, self.config.phi_4, self.config.phi_5,
+                                        N = N)
         self.profile_solve_flag = True
         self.tolkatel_solve_type = "flat"
 
@@ -357,7 +368,7 @@ class Kulachok:
                 "Необходимо повысить минимальный радиус кривизны."
             )
 
-    def set_profile_roller(self):
+    def set_profile_roller(self, N: int = 1000):
         """
         Рассчитывает профиль кулачка для роликового толкателя.
         """
@@ -366,39 +377,39 @@ class Kulachok:
 
         # 1. Извлечение данных
         phi = self.tolkatel_data.fi_list_rad
-        h = self.kulachok_data.H_rad - self.config.D * 1e3 / 2.0
-        v = self.kulachok_data.V_rad
+        h = interp1d(phi, self.kulachok_data.H_rad - self.config.D * 1e3 / 2.0, kind="linear")
+        v = interp1d(phi, self.kulachok_data.V_rad, kind="linear")
 
         # Геометрические параметры
         Rb = self.config.D * 1e3 / 2.0
         Rr = self.config.R_r * 1e3
 
         # 2. Расчет теоретического профиля (Траектория центра ролика)
-        Rc = Rb + Rr + h
-        xc = Rc * np.cos(phi)
-        yc = Rc * np.sin(phi)
+        def Rc_func(fi: np.ndarray | float):
+            return Rb + Rr + h(fi)
+        def xc_func(fi: np.ndarray | float):
+            return Rc_func(fi) * np.cos(fi)
+        def yc_func(fi: np.ndarray | float):
+            return Rc_func(fi) * np.sin(fi)
 
         # 3. Расчет действительного профиля
-        # Производные координат центра ролика по углу phi
-        dxc = v * np.cos(phi) - Rc * np.sin(phi)
-        dyc = v * np.sin(phi) + Rc * np.cos(phi)
+        def dxc_func(fi: np.ndarray | float):
+            return v(fi) * np.cos(fi) - Rc_func(fi) * np.sin(fi)
+        def dyc_func(fi: np.ndarray | float):
+            return(fi) * np.sin(fi) + Rc_func(fi) * np.cos(fi)
 
         # Модуль вектора касательной
-        norm_factor = np.sqrt(dxc ** 2 + dyc ** 2)
-        norm_factor[norm_factor == 0] = 1e-9
+        def norm_func(fi: np.ndarray | float):
+            return np.sqrt(dxc_func(fi) ** 2 + dyc_func(fi) ** 2)
 
         # Координаты конструктивного профиля
-        xp = xc - Rr * (dyc / norm_factor) * (phi >= self.config.phi_1) * (phi <= self.config.phi_4)
-        yp = yc + Rr * (dxc / norm_factor) * (phi >= self.config.phi_1) * (phi <= self.config.phi_4)
-        xp = xc - Rr * (dyc / norm_factor)
-        yp = yc + Rr * (dxc / norm_factor)
+        def xp_func(fi: np.ndarray | float):
+            return xc_func(fi) - Rr * (dyc_func(fi) / norm_func(fi))
+        def yp_func(fi: np.ndarray | float):
+            return yc_func(fi) + Rr * (dxc_func(fi) / norm_func(fi))
 
-        R_func_z = interp1d(self.kulachok_data.fi_list_rad, self.kulachok_data.H_rad, kind="linear")
-        xp_z = R_func_z(phi) * ((phi < self.config.phi_1) + (phi > self.config.phi_4)) * np.cos(phi)
-        yp_z = R_func_z(phi) * ((phi < self.config.phi_1) + (phi > self.config.phi_4)) * np.sin(phi)
-
-        self.profile_data = ProfileData(fi_list=self.tolkatel_data.fi_list_rad.copy(),
-                                       X=xp,
-                                       Y=yp)
+        self.profile_data = set_profile_data([xp_func, yp_func],
+                                             self.config.phi_1, self.config.phi_2, self.config.phi_3, self.config.phi_4, self.config.phi_5,
+                                             N=N)
         self.profile_solve_flag = True
         self.tolkatel_solve_type = "roller"

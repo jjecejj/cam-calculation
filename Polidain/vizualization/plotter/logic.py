@@ -55,6 +55,35 @@ def _plot_component(ax, x: list | ndarray, y: list | ndarray, ylabel: str, xlabe
     ax.grid(True)
 
 
+'''
+def _plot_vertical_lines(ax, phi_0, phi_1, phi_2, phi_3, phi_4, phi_5, initial_angle: float = 0.0):
+    ax.axvline(x=phi_0 - initial_angle, color='red', linestyle='--')
+    ax.axvline(x=phi_1 - initial_angle, color='red', linestyle='--')
+    ax.axvline(x=phi_2 - initial_angle, color='red', linestyle='--')
+    ax.axvline(x=phi_3 - initial_angle, color='red', linestyle='--')
+    ax.axvline(x=phi_4 - initial_angle, color='red', linestyle='--')
+    ax.axvline(x=phi_5 - initial_angle, color='red', linestyle='--')
+'''
+
+
+def _plot_vertical_lines(ax, phi_0, phi_1, phi_2, phi_3, phi_4, phi_5, initial_angle: float = 0.0):
+    """
+    Рисует вертикальные линии фаз и подписывает их.
+    """
+    phis = [phi_0, phi_1, phi_2, phi_3, phi_4, phi_5]
+    labels = [r'$\phi_0$', r'$\phi_1$', r'$\phi_2$', r'$\phi_3$', r'$\phi_4$', r'$\phi_5$']
+
+    # transform=ax.get_xaxis_transform() позволяет задавать X в координатах данных графика,
+    # а Y в относительных координатах осей (где 0 - самый низ, 1 - самый верх)
+    trans = ax.get_xaxis_transform()
+
+    for phi, label in zip(phis, labels):
+        x_val = phi - initial_angle
+        ax.axvline(x=x_val, color='red', linestyle='--', alpha=0.6)
+        ax.text(x_val, 0.95, f' {label} ', color='darkred', transform=trans,
+                ha='left', va='top', fontsize=11,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1))
+
 def set_initial_angle_degree(_fi_list: list | np.ndarray, initial_angle: float | int = 0.0):
     """
     Вычисляет индексы сортировки для сдвига массива углов (в градусах).
@@ -157,6 +186,8 @@ def display_graphs_kulachok(data: GraphData, initial_angle: float | int = 0,
         _plot_component(axs[2], x_data, data.A_degree[i_list], 'Ускорение, $мм/град^2$', xl)
         _plot_component(axs[3], x_data, data.D_degree[i_list], 'Рывок, $мм/град^3$', xl)
         _plot_component(axs[4], x_data, data.K_degree[i_list], 'Кракен, $мм/град^4$', xl)
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_degree, data.phi_1_degree, data.phi_2_degree, data.phi_3_degree, data.phi_4_degree, data.phi_5_degree, initial_angle=initial_angle)
 
     elif graphs_type == 'rad':
         x_data = data.fi_list_rad
@@ -168,6 +199,8 @@ def display_graphs_kulachok(data: GraphData, initial_angle: float | int = 0,
         _plot_component(axs[2], x_data, data.A_rad[i_list], 'Ускорение, $мм/рад^2$', xl)
         _plot_component(axs[3], x_data, data.D_rad[i_list], 'Рывок, $мм/рад^3$', xl)
         _plot_component(axs[4], x_data, data.K_rad[i_list], 'Кракен, $мм/рад^4$', xl)
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_rad, data.phi_1_rad, data.phi_2_rad, data.phi_3_rad, data.phi_4_rad, data.phi_5_rad, initial_angle=initial_angle_rad)
 
     elif graphs_type == 't':
         x_data = data.t_list
@@ -179,6 +212,9 @@ def display_graphs_kulachok(data: GraphData, initial_angle: float | int = 0,
         _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
         _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
         _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_t, data.phi_1_t, data.phi_2_t, data.phi_3_t, data.phi_4_t, data.phi_5_t, initial_angle=initial_time)
+
 
     plt.tight_layout()
     plt.show()
@@ -200,34 +236,46 @@ def display_graphs_tolkatel(data: GraphData, initial_angle: float | int = 0,
     if graphs_type == 'degree':
         x_data = data.fi_list_degree
         xl = r'$\phi$, град'
-        i_list = set_initial_angle(x_data, initial_angle=initial_angle, angle_type = graphs_type)
+        i_list = set_initial_angle(x_data, initial_angle=initial_angle, angle_type=graphs_type)
         _plot_component(axs[0], x_data, data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
         _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/град$', xl)
         _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/град^2$', xl)
         _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/град^3$', xl)
         _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/град^4$', xl)
 
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_degree, data.phi_1_degree, data.phi_2_degree, data.phi_3_degree,
+                                 data.phi_4_degree, data.phi_5_degree, initial_angle=initial_angle)
+
     elif graphs_type == 'rad':
         x_data = data.fi_list_rad
         xl = r'$\phi$, рад'
         initial_angle_rad = initial_angle * np.pi / 180
-        i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type = graphs_type)
+        i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type=graphs_type)
         _plot_component(axs[0], x_data, data.H_rad[i_list], 'Перемещение толкателя, мм', xl)
         _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/рад$', xl)
         _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/рад^2$', xl)
         _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/рад^3$', xl)
         _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/рад^4$', xl)
 
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_rad, data.phi_1_rad, data.phi_2_rad, data.phi_3_rad, data.phi_4_rad,
+                                 data.phi_5_rad, initial_angle=initial_angle_rad)
+
     elif graphs_type == 't':
         x_data = data.t_list
         xl = "t, c"
         initial_time = initial_angle * np.pi / 180 / data.omega_rad if initial_angle != 0 else 0
-        i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type = graphs_type)
+        i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type=graphs_type)
         _plot_component(axs[0], x_data, data.H_t[i_list], 'Перемещение толкателя, мм', xl)
         _plot_component(axs[1], x_data, data.V_t[i_list], 'Скорость, $мм/с$', xl)
         _plot_component(axs[2], x_data, data.A_t[i_list], 'Ускорение, $мм/с^2$', xl)
         _plot_component(axs[3], x_data, data.D_t[i_list], 'Рывок, $мм/с^3$', xl)
         _plot_component(axs[4], x_data, data.K_t[i_list], 'Кракен, $мм/с^4$', xl)
+
+        for ax in axs:
+            _plot_vertical_lines(ax, data.phi_0_t, data.phi_1_t, data.phi_2_t, data.phi_3_t, data.phi_4_t, data.phi_5_t,
+                                 initial_angle=initial_time)
 
     plt.tight_layout()
     plt.show()
@@ -262,8 +310,81 @@ def display_profile(data: ProfileData, initial_angle: float | int = 0):
     plt.legend()
     plt.show()
 
+
+def display_profile(data: ProfileData, initial_angle: float | int = 0):
+    """
+    Отображает профиль кулачка с пунктирными линиями фаз.
+
+    Args:
+        data: Данные профиля (ProfileData).
+        initial_angle: Начальный угол сдвига.
+    """
+    plt.figure(figsize=(6, 6))
+
+    # Сортировка точек для отрисовки профиля
+    i_list = set_initial_angle(data.fi_list, initial_angle=initial_angle)
+    X = np.asarray(data.X)
+    Y = np.asarray(data.Y)
+    X_sorted = X[i_list]
+    Y_sorted = Y[i_list]
+    X_plot = np.append(X_sorted, X_sorted[0])
+    Y_plot = np.append(Y_sorted, Y_sorted[0])
+
+    plt.plot(X_plot, Y_plot, linewidth=2, label='Профиль')
+    plt.scatter([0], [0], color='black', marker='x', s=100, label='Центр вращения')
+
+    # --- Отрисовка линий фаз ---
+    phis_rad = [data.phi_0_rad, data.phi_1_rad, data.phi_2_rad, data.phi_3_rad, data.phi_4_rad, data.phi_5_rad]
+    labels = [r'$\phi_0$', r'$\phi_1$', r'$\phi_2$', r'$\phi_3$', r'$\phi_4$', r'$\phi_5$']
+
+    # Массив углов профиля (в градусах)
+    fi_list_deg = np.asarray(data.fi_list)
+
+    for phi_rad, label in zip(phis_rad, labels):
+        phi_deg = np.degrees(phi_rad)
+
+        # Находим ближайший к фазе индекс в массиве углов (с учетом перехода через 360)
+        diff = np.abs(np.mod(fi_list_deg - phi_deg + 180, 360) - 180)
+        idx = np.argmin(diff)
+
+        # Координаты точки на самом профиле
+        x_end = X[idx]
+        y_end = Y[idx]
+
+        # Рисуем пунктирную линию от центра до края профиля
+        plt.plot([0, x_end], [0, y_end], color='gray', linestyle='--', alpha=0.7)
+
+        # Добавляем текстовую подпись чуть дальше от края (выносим на 15%)
+        length = np.hypot(x_end, y_end)
+        if length > 0:
+            text_x = x_end * 1.15
+            text_y = y_end * 1.15
+            plt.text(text_x, text_y, label, color='darkred', ha='center', va='center',
+                     fontsize=12, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', pad=1))
+    # ---------------------------
+
+    plt.xlabel('X, мм')
+    plt.ylabel('Y, мм')
+
+    # Увеличиваем отступы, чтобы поместились текстовые подписи фаз
+    margin_x = (np.max(X) - np.min(X)) * 0.15
+    margin_y = (np.max(Y) - np.min(Y)) * 0.15
+    plt.xlim(np.min(X) - margin_x, np.max(X) + margin_x)
+    plt.ylim(np.min(Y) - margin_y, np.max(Y) + margin_y)
+
+    plt.grid(True)
+    plt.title("Профиль кулачка\n")
+    plt.axis('equal')
+    plt.legend(loc='upper right')
+    plt.show()
+
+
 def display_profile_multiplicity(data: List[ProfileData], initial_angle: float | int = 0):
     plt.figure(figsize=(6, 6))
+
+    all_X = []
+    all_Y = []
+
     for profile in data:
         i_list = set_initial_angle(profile.fi_list, initial_angle=initial_angle)
         X = np.asarray(profile.X)
@@ -272,20 +393,51 @@ def display_profile_multiplicity(data: List[ProfileData], initial_angle: float |
         Y_sorted = Y[i_list]
         X_plot = np.append(X_sorted, X_sorted[0])
         Y_plot = np.append(Y_sorted, Y_sorted[0])
+
         plt.plot(X_plot, Y_plot)
         plt.scatter([0], [0], color='black', marker='x')
 
+        all_X.extend(X)
+        all_Y.extend(Y)
+
+        # --- Отрисовка линий фаз для каждого профиля ---
+        phis_rad = [profile.phi_0_rad, profile.phi_1_rad, profile.phi_2_rad,
+                    profile.phi_3_rad, profile.phi_4_rad, profile.phi_5_rad]
+        labels = [r'$\phi_0$', r'$\phi_1$', r'$\phi_2$', r'$\phi_3$', r'$\phi_4$', r'$\phi_5$']
+        fi_list_deg = np.asarray(profile.fi_list)
+
+        for phi_rad, label in zip(phis_rad, labels):
+            phi_deg = np.degrees(phi_rad)
+            diff = np.abs(np.mod(fi_list_deg - phi_deg + 180, 360) - 180)
+            idx = np.argmin(diff)
+            x_end = X[idx]
+            y_end = Y[idx]
+
+            plt.plot([0, x_end], [0, y_end], color='gray', linestyle='--', alpha=0.5)
+
+            length = np.hypot(x_end, y_end)
+            if length > 0:
+                plt.text(x_end * 1.15, y_end * 1.15, label, color='darkred', ha='center', va='center',
+                         fontsize=12, bbox=dict(facecolor='white', alpha=0.5, edgecolor='none', pad=1))
+        # -----------------------------------------------
+
     plt.xlabel('X, мм')
     plt.ylabel('Y, мм')
-    margin = 0.01
-    plt.xlim(np.min(X) - margin, np.max(X) + margin)
-    plt.ylim(np.min(Y) - margin, np.max(Y) + margin)
+
+    # Динамические отступы с учетом всех профилей
+    margin_x = (np.max(all_X) - np.min(all_X)) * 0.15
+    margin_y = (np.max(all_Y) - np.min(all_Y)) * 0.15
+    plt.xlim(np.min(all_X) - margin_x, np.max(all_X) + margin_x)
+    plt.ylim(np.min(all_Y) - margin_y, np.max(all_Y) + margin_y)
+
     plt.grid(True)
     plt.title("Профили кулачка")
     plt.axis('equal')
     plt.show()
 
-def display_all(kulachok: Kulachok, initial_angle: Union[float, int, str] = 0, graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
+
+def display_all(kulachok: Kulachok, initial_angle: Union[float, int, str] = 0,
+                graphs_type: Literal['t', 'rad', 'degree'] = 'degree'):
     """
     Отображает все графики: кинематику кулачка, кинематику толкателя и профиль.
 
@@ -304,6 +456,7 @@ def display_all(kulachok: Kulachok, initial_angle: Union[float, int, str] = 0, g
     display_graphs_kulachok(kulachok.kulachok_data, initial_angle=target_angle, graphs_type=graphs_type)
     display_graphs_tolkatel(kulachok.tolkatel_data, initial_angle=target_angle, graphs_type=graphs_type)
     display_profile(kulachok.profile_data, initial_angle=target_angle)
+
 
 def display_dashboard(kulachok: Kulachok,
                       initial_angle: Union[float, int, str] = 0,
@@ -330,7 +483,6 @@ def display_dashboard(kulachok: Kulachok,
     if target == 'tolkatel':
         data = kulachok.tolkatel_data
         base_title = "Кинематика толкателя"
-        # Заголовки для Y осей
         ylabels = ['Перемещение, мм', 'Скорость', 'Ускорение', 'Рывок', 'Кракен']
     else:
         data = kulachok.kulachok_data
@@ -341,11 +493,14 @@ def display_dashboard(kulachok: Kulachok,
     if graphs_type == 'degree':
         x_data = data.fi_list_degree
         xlabel = r'$\phi$, град'
-        # Единицы измерения для подписей
         units = ['', r'$мм/град$', r'$мм/град^2$', r'$мм/град^3$', r'$мм/град^4$']
         i_list = set_initial_angle(x_data, initial_angle=target_angle, angle_type=graphs_type)
-        # Данные Y
-        y_datasets = [data.H_degree, data.V_degree, data.A_degree, data.D_degree, data.K_degree]  # H_rad обычно в мм, ок
+        y_datasets = [data.H_degree, data.V_degree, data.A_degree, data.D_degree, data.K_degree]
+
+        # Данные для вертикальных линий
+        phis = (data.phi_0_degree, data.phi_1_degree, data.phi_2_degree, data.phi_3_degree, data.phi_4_degree,
+                data.phi_5_degree)
+        shift_val = target_angle
 
     elif graphs_type == 'rad':
         x_data = data.fi_list_rad
@@ -355,6 +510,9 @@ def display_dashboard(kulachok: Kulachok,
         i_list = set_initial_angle(x_data, initial_angle=initial_angle_rad, angle_type=graphs_type)
         y_datasets = [data.H_rad, data.V_rad, data.A_rad, data.D_rad, data.K_rad]
 
+        phis = (data.phi_0_rad, data.phi_1_rad, data.phi_2_rad, data.phi_3_rad, data.phi_4_rad, data.phi_5_rad)
+        shift_val = initial_angle_rad
+
     elif graphs_type == 't':
         x_data = data.t_list
         xlabel = "t, c"
@@ -363,21 +521,20 @@ def display_dashboard(kulachok: Kulachok,
         i_list = set_initial_angle(x_data, initial_angle=initial_time, angle_type=graphs_type)
         y_datasets = [data.H_t, data.V_t, data.A_t, data.D_t, data.K_t]
 
+        phis = (data.phi_0_t, data.phi_1_t, data.phi_2_t, data.phi_3_t, data.phi_4_t, data.phi_5_t)
+        shift_val = initial_time
+
     # --- СОЗДАНИЕ ГРАФИЧЕСКОГО ОКНА ---
     fig = plt.figure(figsize=(16, 10))
-    # Сетка: 5 строк, 3 колонки.
-    # Графики занимают первые 2 колонки (слева), Профиль занимает 3-ю колонку (справа)
     gs = gridspec.GridSpec(5, 3, figure=fig)
 
     # === ЛЕВАЯ ЧАСТЬ: Кинематика ===
     ax_kinematics = []
     for i in range(5):
-        ax = fig.add_subplot(gs[i, 0:2])  # Занимаем 2 колонки из 3
-        # Формируем полный заголовок оси Y с единицами измерения
+        ax = fig.add_subplot(gs[i, 0:2])
         full_ylabel = f"{ylabels[i]} {units[i]}" if i > 0 else ylabels[i]
         _plot_component(ax, x_data, y_datasets[i][i_list], full_ylabel, xlabel)
 
-        # Убираем подписи оси X у всех графиков кроме нижнего для чистоты
         if i < 4:
             ax.set_xlabel("")
             ax.tick_params(labelbottom=False)
@@ -385,12 +542,15 @@ def display_dashboard(kulachok: Kulachok,
 
     ax_kinematics[0].set_title(base_title, fontsize=14)
 
+    # Добавляем вертикальные линии на все графики кинематики
+    for ax in ax_kinematics:
+        _plot_vertical_lines(ax, *phis, initial_angle=shift_val)
+
     # === ПРАВАЯ ЧАСТЬ: Профиль ===
-    ax_profile = fig.add_subplot(gs[:, 2])  # Занимаем последнюю колонку, все строки
+    ax_profile = fig.add_subplot(gs[:, 2])
 
     profile_data = kulachok.profile_data
 
-    # Сортировка для профиля всегда через set_initial_angle (она внутри понимает градусы/радианы по умолчанию)
     i_list_prof = set_initial_angle(profile_data.fi_list, initial_angle=target_angle)
     X = np.asarray(profile_data.X)
     Y = np.asarray(profile_data.Y)
@@ -399,21 +559,42 @@ def display_dashboard(kulachok: Kulachok,
     X_plot = np.append(X_sorted, X_sorted[0])
     Y_plot = np.append(Y_sorted, Y_sorted[0])
 
-    ax_profile.plot(X_plot, Y_plot, linewidth=2)
+    ax_profile.plot(X_plot, Y_plot, linewidth=2, label='Профиль')
     ax_profile.scatter([0], [0], color='black', marker='x', s=100, label='Центр вращения')
 
-    # Оформление профиля
+    # --- Отрисовка линий фаз на дашборде ---
+    phis_rad_prof = [profile_data.phi_0_rad, profile_data.phi_1_rad, profile_data.phi_2_rad,
+                     profile_data.phi_3_rad, profile_data.phi_4_rad, profile_data.phi_5_rad]
+    labels_prof = [r'$\phi_0$', r'$\phi_1$', r'$\phi_2$', r'$\phi_3$', r'$\phi_4$', r'$\phi_5$']
+    fi_list_deg_prof = np.asarray(profile_data.fi_list)
+
+    for phi_rad, label in zip(phis_rad_prof, labels_prof):
+        phi_deg = np.degrees(phi_rad)
+        diff = np.abs(np.mod(fi_list_deg_prof - phi_deg + 180, 360) - 180)
+        idx = np.argmin(diff)
+        x_end = X[idx]
+        y_end = Y[idx]
+
+        ax_profile.plot([0, x_end], [0, y_end], color='gray', linestyle='--', alpha=0.7)
+
+        length = np.hypot(x_end, y_end)
+        if length > 0:
+            ax_profile.text(x_end * 1.15, y_end * 1.15, label, color='darkred', ha='center', va='center',
+                            fontsize=12, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', pad=1))
+    # ---------------------------------------
+
     ax_profile.set_xlabel('X, мм')
     ax_profile.set_ylabel('Y, мм')
     ax_profile.set_title("Профиль кулачка", fontsize=14)
-    ax_profile.axis('equal')  # Важно: сохраняем пропорции
+    ax_profile.axis('equal')
     ax_profile.grid(True)
-    ax_profile.legend()
+    ax_profile.legend(loc='upper right')
 
-    # Добавляем отступы
-    margin = 2  # мм
-    ax_profile.set_xlim(np.min(X) - margin, np.max(X) + margin)
-    ax_profile.set_ylim(np.min(Y) - margin, np.max(Y) + margin)
+    # Динамические отступы
+    margin_x = (np.max(X) - np.min(X)) * 0.15
+    margin_y = (np.max(Y) - np.min(Y)) * 0.15
+    ax_profile.set_xlim(np.min(X) - margin_x, np.max(X) + margin_x)
+    ax_profile.set_ylim(np.min(Y) - margin_y, np.max(Y) + margin_y)
 
     plt.tight_layout()
     plt.show()

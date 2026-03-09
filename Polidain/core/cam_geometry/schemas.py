@@ -2,7 +2,10 @@ import numpy as np
 from typing import Callable
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-def set_graph_data(fun_list: list[Callable], omega: float, N: int = 1000):
+
+def set_graph_data(fun_list: list[Callable], omega: float,
+                   phi_1: float, phi_2: float, phi_3: float, phi_4: float, phi_5: float,
+                   phi_0: float = 0.0, N: int = 1000):
     """
     Рассчитывает данные графиков кинематических параметров.
 
@@ -20,9 +23,15 @@ def set_graph_data(fun_list: list[Callable], omega: float, N: int = 1000):
     A = fun_list[2](fi_list) * 1000
     D = fun_list[3](fi_list) * 1000
     K = fun_list[4](fi_list) * 1000
-    return GraphData(H_rad = H, V_rad = V, A_rad = A, D_rad = D, K_rad = K, fi_list_rad = fi_list, omega_rad = omega)
+    return GraphData(H_rad=H, V_rad=V, A_rad=A, D_rad=D, K_rad=K, fi_list_rad=fi_list,
+                     omega_rad=omega,
+                     phi_0_rad=phi_0, phi_1_rad=phi_1, phi_2_rad=phi_2, phi_3_rad=phi_3, phi_4_rad=phi_4,
+                     phi_5_rad=phi_5)
 
-def set_profile_data(fun_list: list[Callable], N: int = 1000):
+
+def set_profile_data(fun_list: list[Callable],
+                     phi_1: float, phi_2: float, phi_3: float, phi_4: float, phi_5: float,
+                     phi_0: float = 0.0, N: int = 1000):
     """
     Рассчитывает координаты профиля кулачка.
 
@@ -37,7 +46,10 @@ def set_profile_data(fun_list: list[Callable], N: int = 1000):
     X = fun_list[0](fi_list) * 1000
     Y = fun_list[1](fi_list) * 1000
     fi_list = fi_list / np.pi * 180
-    return ProfileData(X = X, Y = Y, fi_list = fi_list)
+    return ProfileData(X=X, Y=Y, fi_list=fi_list,
+                       phi_0_rad=phi_0, phi_1_rad=phi_1, phi_2_rad=phi_2, phi_3_rad=phi_3, phi_4_rad=phi_4,
+                       phi_5_rad=phi_5)
+
 
 class GraphData(BaseModel):
     """
@@ -48,12 +60,24 @@ class GraphData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     fi_list_rad: np.ndarray[float] | list[float] = Field(..., description="Массив углов поворота (рад)")
-    H_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Перемещение (аналог S)")
-    V_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог скорости")
-    A_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог ускорения")
-    D_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Аналог рывка")
-    K_rad: np.ndarray[float | np.ndarray] |  list[float | np.ndarray] = Field(..., min_length=10, description="Четвертая производная")
-    omega_rad: float  = Field(ge = 0.0, description="Угловая скорость (рад/с)")
+    H_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                             description="Перемещение (аналог S)")
+    V_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                             description="Аналог скорости")
+    A_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                             description="Аналог ускорения")
+    D_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                             description="Аналог рывка")
+    K_rad: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                             description="Четвертая производная")
+    omega_rad: float = Field(gt=0.0, description="Угловая скорость (рад/с)")
+
+    phi_0_rad: float = Field(default=0.0, ge=0.0, description="Начальная фаза")
+    phi_1_rad: float = Field(ge=0.0, description="Фаза выбора зазора")
+    phi_2_rad: float = Field(ge=0.0, description="Фаза подъёма")
+    phi_3_rad: float = Field(ge=0.0, description="Фаза дальнего стояния")
+    phi_4_rad: float = Field(ge=0.0, description="Фаза спуска")
+    phi_5_rad: float = Field(ge=0.0, description="Фаза выбора зазора")
 
     @model_validator(mode='after')
     def check_lists(self):
@@ -69,7 +93,8 @@ class GraphData(BaseModel):
     @property
     def fi_list_degree(self) -> np.ndarray[float]:
         """Массив углов в градусах."""
-        return  np.degrees(self.fi_list_rad)
+        return np.degrees(self.fi_list_rad)
+
     @property
     def omega_degree(self) -> float:
         """Угловая скорость в градусах/с."""
@@ -118,23 +143,94 @@ class GraphData(BaseModel):
     @property
     def A_t(self) -> np.ndarray[float]:
         """Ускорение (м/с^2)."""
-        return self.A_rad * self.omega_rad**2
+        return self.A_rad * self.omega_rad ** 2
 
     @property
     def D_t(self) -> np.ndarray[float]:
         """Рывок (м/с^3)."""
-        return self.D_rad * self.omega_rad**3
+        return self.D_rad * self.omega_rad ** 3
 
     @property
     def K_t(self) -> np.ndarray[float]:
         """Четвертая производная (м/с^4)."""
-        return self.K_rad * self.omega_rad**4
+        return self.K_rad * self.omega_rad ** 4
+
+    @property
+    def phi_0_degree(self) -> float:
+        """Начальная фаза в градусах."""
+        return np.degrees(self.phi_0_rad)
+
+    @property
+    def phi_1_degree(self) -> float:
+        """Фаза выбора зазора в градусах."""
+        return np.degrees(self.phi_1_rad)
+
+    @property
+    def phi_2_degree(self) -> float:
+        """Фаза подъёма в градусах."""
+        return np.degrees(self.phi_2_rad)
+
+    @property
+    def phi_3_degree(self) -> float:
+        """Фаза дальнего стояния в градусах."""
+        return np.degrees(self.phi_3_rad)
+
+    @property
+    def phi_4_degree(self) -> float:
+        """Фаза спуска в градусах."""
+        return np.degrees(self.phi_4_rad)
+
+    @property
+    def phi_5_degree(self) -> float:
+        """Фаза выбора зазора в градусах."""
+        return np.degrees(self.phi_5_rad)
+
+    @property
+    def phi_0_t(self) -> float:
+        """Время начальной фазы (с)."""
+        return self.phi_0_rad / self.omega_rad
+
+    @property
+    def phi_1_t(self) -> float:
+        """Время фазы выбора зазора (с)."""
+        return self.phi_1_rad / self.omega_rad
+
+    @property
+    def phi_2_t(self) -> float:
+        """Время фазы подъёма (с)."""
+        return self.phi_2_rad / self.omega_rad
+
+    @property
+    def phi_3_t(self) -> float:
+        """Время фазы дальнего стояния (с)."""
+        return self.phi_3_rad / self.omega_rad
+
+    @property
+    def phi_4_t(self) -> float:
+        """Время фазы спуска (с)."""
+        return self.phi_4_rad / self.omega_rad
+
+    @property
+    def phi_5_t(self) -> float:
+        """Время фазы выбора зазора (с)."""
+        return self.phi_5_rad / self.omega_rad
+
 
 class ProfileData(BaseModel):
     """
     Модель данных для хранения координат профиля кулачка.
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
     fi_list: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., description="Массив углов")
-    X: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Координаты X профиля")
-    Y: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10, description="Координаты Y профиля")
+    X: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                         description="Координаты X профиля")
+    Y: np.ndarray[float | np.ndarray] | list[float | np.ndarray] = Field(..., min_length=10,
+                                                                         description="Координаты Y профиля")
+
+    phi_0_rad: float = Field(default=0.0, ge=0.0, description="Начальная фаза")
+    phi_1_rad: float = Field(ge=0.0, description="Фаза выбора зазора")
+    phi_2_rad: float = Field(ge=0.0, description="Фаза подъёма")
+    phi_3_rad: float = Field(ge=0.0, description="Фаза дальнего стояния")
+    phi_4_rad: float = Field(ge=0.0, description="Фаза спуска")
+    phi_5_rad: float = Field(ge=0.0, description="Фаза выбора зазора")
