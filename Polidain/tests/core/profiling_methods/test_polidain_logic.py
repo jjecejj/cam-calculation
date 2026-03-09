@@ -43,6 +43,7 @@ def test_segment_selection_error(calculator):
     """Проверяем, что при запросе несуществующего участка выбрасывается ValueError."""
     with pytest.raises(ValueError) as exc_info:
         calculator.segment_selection(5)
+    assert str(exc_info.value) == 'Участок 5 не настроен'
 
 
 @pytest.mark.parametrize("segment", [1, 2, 3, 4])
