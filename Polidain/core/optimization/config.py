@@ -11,6 +11,10 @@ class OptimizeConfig:
     D: float  # Базовый диаметр кулака (мм)
     h: float  # Максимальное перемещение толкателя
     N_k: float = 1000 # Количество оборотов кулачка в минут
+    H_func: Callable | None = None
+    tolkatel_type: Literal['thin', 'flat', 'roller'] = 'thin'
+    D_t: float = 0.0  # Диаметр толкателя (мм)
+    R_r: float = 0.0  # Радиус ролика (мм)
 
 @dataclass
 class BoundsConfig:

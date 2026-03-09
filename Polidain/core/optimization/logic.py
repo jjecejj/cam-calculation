@@ -61,6 +61,8 @@ def fun_optimize_polidain(x: ndarray, fi_list: ndarray = None, R_func: Callable 
             f_v=f_v,
             f_op=f_op,
             f_z=f_z,
+            D_t=optimize_config.D_t,
+            R_r=optimize_config.R_r,
         )
         polidain_config = PolidainConfig(
             m=m,
@@ -72,7 +74,14 @@ def fun_optimize_polidain(x: ndarray, fi_list: ndarray = None, R_func: Callable 
         )
         polidain_calculator = PolidainCalculator(polidain_config)
         kulachok = Kulachok(config, polidain_calculator)
-        temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
+        kulachok.solve(kulachok_type=optimize_config.tolkatel_type, N=len(fi_list))
+
+        # Оптимизируем по закону движения толкателя, если задана H_func
+        if optimize_config.H_func is not None:
+            temp = np.sum(np.abs(kulachok.fun_h_tolkatel(fi_list) - optimize_config.H_func(fi_list)))
+        else:
+            temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
+
         print(temp)
         return temp
     except Exception as e:
@@ -123,6 +132,8 @@ def fun_optimize_polinmail(x: ndarray, fi_list: ndarray = None, R_func: Callable
             f_v=f_v,
             f_op=f_op,
             f_z=f_z,
+            D_t=optimize_config.D_t,
+            R_r=optimize_config.R_r,
         )
         config_1 = LocalPolinmailConfig(
             m = m_1,
@@ -148,7 +159,14 @@ def fun_optimize_polinmail(x: ndarray, fi_list: ndarray = None, R_func: Callable
         )
         polinmail_calculator = PolinmailCalculator(polinmail_config)
         kulachok = Kulachok(config, polinmail_calculator)
-        temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
+        kulachok.solve(kulachok_type=optimize_config.tolkatel_type, N=len(fi_list))
+
+        # Оптимизируем по закону движения толкателя, если задана H_func
+        if optimize_config.H_func is not None:
+            temp = np.sum(np.abs(kulachok.fun_h_tolkatel(fi_list) - optimize_config.H_func(fi_list)))
+        else:
+            temp = np.sum(np.abs(kulachok.fun_h(fi_list) - R_func(fi_list)))
+
         print(temp)
         return temp
     except Exception as e:
@@ -185,7 +203,11 @@ def differential_evolution_optimization(optimize_config: OptimizeConfig,
     print("Best result:", result.x.tolist())
     print("Function value:", result.fun)
 
-def get_calculator_config_from_x(x, D, h, calculator_type: str):
+def get_calculator_config_from_x(x, D, h, calculator_type: str, optimize_config: OptimizeConfig | None = None):
+    # Если optimize_config передан, берем D_t и R_r из него
+    D_t = optimize_config.D_t if optimize_config else 0.0
+    R_r = optimize_config.R_r if optimize_config else 0.0
+
     config = KulachokConfig(
         N_k=1000,
         D=D,
@@ -195,6 +217,8 @@ def get_calculator_config_from_x(x, D, h, calculator_type: str):
         f_v=x[2],
         f_op=x[3],
         f_z=x[4],
+        D_t=D_t,
+        R_r=R_r,
     )
     if calculator_type == 'polidain':
         calculator_config = PolidainConfig(
